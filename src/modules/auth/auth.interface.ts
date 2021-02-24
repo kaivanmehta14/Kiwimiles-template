@@ -1,5 +1,5 @@
 import type { Request as NestRequest } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { User, UserRole } from '@prisma/client';
 import type { Request as ExpressRequest } from 'express';
 
 export type MfaMethod = 'NONE' | 'SMS' | 'TOTP' | 'EMAIL';
@@ -20,6 +20,11 @@ export interface TotpTokenResponse {
   totpToken: string;
   type: MfaMethod;
   multiFactorRequired: true;
+}
+
+export interface TokenResponseWithUser {
+    user: User;
+    token: TokenResponse;
 }
 
 export interface AccessTokenParsed {
