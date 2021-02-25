@@ -14,8 +14,6 @@ export class GroupsService {
     userId: number,
     data: Omit<Omit<Prisma.GroupCreateInput, 'group'>, 'user'>,
   ) {
-      console.log(data);
-      console.log(userId);
     let initials = data.name.trim().substr(0, 2).toUpperCase();
     if (data.name.includes(' '))
       initials = data.name
