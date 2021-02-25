@@ -1,12 +1,12 @@
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    ParseIntPipe,
-    Post,
-    Query
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
 } from '@nestjs/common';
 import { Email } from '@prisma/client';
 import { CursorPipe } from '../../pipes/cursor.pipe';
@@ -14,7 +14,6 @@ import { OptionalIntPipe } from '../../pipes/optional-int.pipe';
 import { OrderByPipe } from '../../pipes/order-by.pipe';
 import { WherePipe } from '../../pipes/where.pipe';
 import { Expose } from '../../providers/prisma/prisma.interface';
-import { Public } from '../auth/public.decorator';
 import { Scopes } from '../auth/scope.decorator';
 import { CreateEmailDto } from './emails.dto';
 import { EmailsService } from './emails.service';
@@ -55,7 +54,7 @@ export class EmailController {
 
   /** Get an email for a user */
   @Get(':id')
-  //@Scopes('user-{userId}:read-email-{id}')
+  @Scopes('user-{userId}:read-email-{id}')
   async get(
     @Param('userId', ParseIntPipe) userId: number,
     @Param('id', ParseIntPipe) id: number,
