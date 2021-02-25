@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
-  UnprocessableEntityException
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Prisma } from '@prisma/client';
@@ -15,7 +15,7 @@ import got from 'got/dist/source';
 import anonymize from 'ip-anonymize';
 import { authenticator } from 'otplib';
 import { createRandomBytes, createDigest } from '@otplib/plugin-crypto';
-import { keyDecoder, keyEncoder } from '@otplib/plugin-thirty-two';
+import { keyEncoder, keyDecoder } from '@otplib/plugin-thirty-two';
 import qrcode from 'qrcode';
 import randomColor from 'randomcolor';
 import UAParser from 'ua-parser-js';
@@ -34,7 +34,7 @@ import {
   SESSION_NOT_FOUND,
   UNVERIFIED_EMAIL,
   UNVERIFIED_LOCATION,
-  USER_NOT_FOUND
+  USER_NOT_FOUND,
 } from '../../errors/errors.constants';
 import { safeEmail } from '../../helpers/safe-email';
 import { GeolocationService } from '../../providers/geolocation/geolocation.service';
@@ -43,29 +43,29 @@ import { Expose } from '../../providers/prisma/prisma.interface';
 import { PrismaService } from '../../providers/prisma/prisma.service';
 import { PwnedService } from '../../providers/pwned/pwned.service';
 import {
-    APPROVE_SUBNET_TOKEN,
-    EMAIL_MFA_TOKEN,
-    EMAIL_VERIFY_TOKEN,
-    LOGIN_ACCESS_TOKEN,
-    MERGE_ACCOUNTS_TOKEN,
-    MULTI_FACTOR_TOKEN,
-    PASSWORD_RESET_TOKEN
+  APPROVE_SUBNET_TOKEN,
+  EMAIL_MFA_TOKEN,
+  EMAIL_VERIFY_TOKEN,
+  LOGIN_ACCESS_TOKEN,
+  MERGE_ACCOUNTS_TOKEN,
+  MULTI_FACTOR_TOKEN,
+  PASSWORD_RESET_TOKEN,
 } from '../../providers/tokens/tokens.constants';
 import { TokensService } from '../../providers/tokens/tokens.service';
 import { TwilioService } from '../../providers/twilio/twilio.service';
 import { ApprovedSubnetsService } from '../approved-subnets/approved-subnets.service';
 import { RegisterDto } from './auth.dto';
 import {
-    AccessTokenClaims,
-    MfaTokenPayload,
-    TokenResponse,
-    TotpTokenResponse, TokenResponseWithUser,
+  AccessTokenClaims,
+  MfaTokenPayload,
+  TokenResponse,
+  TotpTokenResponse, TokenResponseWithUser,
 } from './auth.interface';
 import {
-    groupAdminScopes,
-    groupMemberScopes,
-    groupOwnerScopes,
-    userScopes
+  groupAdminScopes,
+  groupMemberScopes,
+  groupOwnerScopes,
+  userScopes,
 } from '../../helpers/scopes';
 import axios from 'axios';
 
@@ -83,17 +83,17 @@ export class AuthService {
     private approvedSubnetsService: ApprovedSubnetsService,
     private twilioService: TwilioService,
   ) {
-      this.authenticator = authenticator.create({
-        window: [
-            this.configService.get<number>('security.totpWindowPast') ?? 0,
-            this.configService.get<number>('security.totpWindowFuture') ?? 0,
-        ],
-        keyEncoder,
-        keyDecoder,
-        createDigest,
-        createRandomBytes,
-      });
-    }
+    this.authenticator = authenticator.create({
+      window: [
+        this.configService.get<number>('security.totpWindowPast') ?? 0,
+        this.configService.get<number>('security.totpWindowFuture') ?? 0,
+      ],
+    keyEncoder,
+    keyDecoder,
+    createDigest,
+    createRandomBytes,
+    });
+  }
 
   async login(
     ipAddress: string,
@@ -102,44 +102,44 @@ export class AuthService {
     password?: string,
     code?: string,
     origin?: string,
-    ): Promise<TokenResponse | TotpTokenResponse | TokenResponseWithUser> {
-      const emailSafe = safeEmail(email);
-      const user = await this.prisma.user.findFirst({
-        where: { emails: { some: { emailSafe } } },
-        include: {
-          emails: true,
-          prefersEmail: true,
-        },
+  ): Promise<TokenResponse | TotpTokenResponse | TokenResponseWithUser> {
+    const emailSafe = safeEmail(email);
+    const user = await this.prisma.user.findFirst({
+      where: { emails: { some: { emailSafe } } },
+      include: {
+        emails: true,
+        prefersEmail: true,
+      },
+    });
+    if (!user) throw new NotFoundException(USER_NOT_FOUND);
+    if (!user.active)
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { active: true },
       });
-      if (!user) throw new NotFoundException(USER_NOT_FOUND);
-      if (!user.active)
-        await this.prisma.user.update({
-            where: { id: user.id },
-            data: { active: true },
-        });
-      if (!user.emails.find((i) => i.emailSafe === emailSafe)?.isVerified)
-        throw new UnauthorizedException(UNVERIFIED_EMAIL);
-      if (!password || !user.password) return this.mfaResponse(user, 'EMAIL');
-      if (!user.prefersEmail) throw new BadRequestException(NO_EMAILS);
-      if (!(await compare(password, user.password)))
-        throw new UnauthorizedException(INVALID_CREDENTIALS);
-      if (code)
-        return this.loginUserWithTotpCode(
-            ipAddress,
-            userAgent,
-            user.id,
-            code,
-            origin,
-        );
-      if (user.twoFactorMethod !== 'NONE') return this.mfaResponse(user);
-      await this.checkLoginSubnet(
+    if (!user.emails.find((i) => i.emailSafe === emailSafe)?.isVerified)
+      throw new UnauthorizedException(UNVERIFIED_EMAIL);
+    if (!password || !user.password) return this.mfaResponse(user, 'EMAIL');
+    if (!user.prefersEmail) throw new BadRequestException(NO_EMAILS);
+    if (!(await compare(password, user.password)))
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    if (code)
+      return this.loginUserWithTotpCode(
         ipAddress,
         userAgent,
-        user.checkLocationOnLogin,
         user.id,
+        code,
         origin,
-      );
-      return { user: user, token: await this.loginResponse(ipAddress, userAgent, user)};
+    );
+    if (user.twoFactorMethod !== 'NONE') return this.mfaResponse(user);
+    await this.checkLoginSubnet(
+    ipAddress,
+    userAgent,
+    user.checkLocationOnLogin,
+    user.id,
+    origin,
+    );
+    return { user: user, token: await this.loginResponse(ipAddress, userAgent, user)};
   }
 
   async register(ipAddress: string, _data: RegisterDto): Promise<Expose<User>> {
@@ -156,28 +156,28 @@ export class AuthService {
       data.name = data.name
         .split(' ')
         .map((word, index) =>
-            index === 0 || index === data.name.split(' ').length
-                ? (word.charAt(0) ?? '').toUpperCase() +
-                (word.slice(1) ?? '').toLowerCase()
-                : word,
+          index === 0 || index === data.name.split(' ').length
+            ? (word.charAt(0) ?? '').toUpperCase() +
+            (word.slice(1) ?? '').toLowerCase()
+            : word,
         )
         .join(' ');
     if (data.password)
-        data.password = await this.hashAndValidatePassword(
-            data.password,
-            ignorePwnedPassword,
-        );
+      data.password = await this.hashAndValidatePassword(
+        data.password,
+        ignorePwnedPassword,
+      );
     let initials = data.name.trim().substr(0, 2).toUpperCase();
     if (data.name.includes(' '))
-        initials = data.name
-            .split(' ')
-            .map((i) => i.trim().substr(0, 1))
-            .join('')
-            .toUpperCase();
+      initials = data.name
+        .split(' ')
+        .map((i) => i.trim().substr(0, 1))
+        .join('')
+        .toUpperCase();
     data.profilePictureUrl =
       data.profilePictureUrl ??
       `https://ui-avatars.com/api/?name=${initials}&background=${randomColor({
-          luminosity: 'light',
+        luminosity: 'light',
       }).replace('#', '')}&color=000000`;
 
     //if (!data.gender) {
@@ -228,24 +228,24 @@ export class AuthService {
         ...data,
         id,
         emails: {
-            create: { email: email, emailSafe },
+          create: { email: email, emailSafe },
         },
       },
       include: { emails: { select: { id: true } } },
     });
     if (user.emails[0]?.id)
-        await this.prisma.user.update({
-            where: { id: user.id },
-            data: { prefersEmail: { connect: { id: user.emails[0].id } } },
-        });
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { prefersEmail: { connect: { id: user.emails[0].id } } },
+      });
     // In testing, we auto-approve the email
-      if (process.env.TEST) {
-        const emailId = user.emails[0]?.id;
-        if (emailId)
-            await this.prisma.email.update({
-                where: { id: emailId },
-                data: { isVerified: true },
-            });
+    if (process.env.TEST) {
+      const emailId = user.emails[0]?.id;
+      if (emailId)
+        await this.prisma.email.update({
+          where: { id: emailId },
+          data: { isVerified: true },
+        });
     } else await this.sendEmailVerification(email, false, origin);
     await this.approvedSubnetsService.approveNewSubnet(user.id, ipAddress);
     return this.prisma.expose(user);
@@ -271,9 +271,9 @@ export class AuthService {
         link:
         `${origin ?? this.configService.get<string>('frontendUrl')
         }/auth/link/verify-email?token=${this.tokensService.signJwt(
-        EMAIL_VERIFY_TOKEN,
-        { id: emailDetails.id },
-        '7d',
+          EMAIL_VERIFY_TOKEN,
+          { id: emailDetails.id },
+          '7d',
         )}`,
       },
     });
@@ -304,12 +304,12 @@ export class AuthService {
   async logout(token: string): Promise<void> {
     if (!token) throw new UnprocessableEntityException(NO_TOKEN_PROVIDED);
     const session = await this.prisma.session.findFirst({
-        where: { token },
-        select: { id: true, user: { select: { id: true } } },
+      where: { token },
+      select: { id: true, user: { select: { id: true } } },
     });
     if (!session) throw new NotFoundException(SESSION_NOT_FOUND);
     await this.prisma.session.delete({
-        where: { id: session.id },
+      where: { id: session.id },
     });
   }
 
@@ -320,8 +320,8 @@ export class AuthService {
   ): Promise<TokenResponse> {
     if (!token) throw new UnprocessableEntityException(NO_TOKEN_PROVIDED);
     const { id } = this.tokensService.verify<{ id: number }>(
-        APPROVE_SUBNET_TOKEN,
-        token,
+      APPROVE_SUBNET_TOKEN,
+      token,
     );
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(USER_NOT_FOUND);
@@ -336,13 +336,13 @@ export class AuthService {
   async getTotpQrCode(userId: number): Promise<string> {
     const secret = this.authenticator.generateSecret();
     await this.prisma.user.update({
-        where: { id: userId },
-        data: { twoFactorSecret: secret },
+      where: { id: userId },
+      data: { twoFactorSecret: secret },
     });
     const otpauth = this.authenticator.keyuri(
-        userId.toString(),
-        this.configService.get<string>('meta.appName') ?? '',
-        secret,
+      userId.toString(),
+      this.configService.get<string>('meta.appName') ?? '',
+      secret,
     );
     return qrcode.toDataURL(otpauth);
   }
@@ -354,19 +354,19 @@ export class AuthService {
     code: string,
   ): Promise<Expose<User>> {
     const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { twoFactorSecret: true, twoFactorMethod: true },
+      where: { id: userId },
+      select: { twoFactorSecret: true, twoFactorMethod: true },
     });
     if (!user) throw new NotFoundException(USER_NOT_FOUND);
     if (user.twoFactorMethod !== 'NONE')
-        throw new ConflictException(MFA_ENABLED_CONFLICT);
+      throw new ConflictException(MFA_ENABLED_CONFLICT);
     if (!user.twoFactorSecret)
-        user.twoFactorSecret = this.authenticator.generateSecret();
+      user.twoFactorSecret = this.authenticator.generateSecret();
     if (!this.authenticator.check(code, user.twoFactorSecret))
-        throw new UnauthorizedException(INVALID_MFA_CODE);
+      throw new UnauthorizedException(INVALID_MFA_CODE);
     const result = await this.prisma.user.update({
-        where: { id: userId },
-        data: { twoFactorMethod: method, twoFactorSecret: user.twoFactorSecret },
+      where: { id: userId },
+      data: { twoFactorMethod: method, twoFactorSecret: user.twoFactorSecret },
     });
     return this.prisma.expose<User>(result);
   }
@@ -379,8 +379,8 @@ export class AuthService {
     origin?: string,
   ): Promise<TokenResponse | TokenResponseWithUser> {
     const { id } = this.tokensService.verify<MfaTokenPayload>(
-        MULTI_FACTOR_TOKEN,
-        token,
+      MULTI_FACTOR_TOKEN,
+      token,
     );
     return this.loginUserWithTotpCode(ipAddress, userAgent, id, code, origin);
   }
@@ -391,8 +391,8 @@ export class AuthService {
     token: string,
   ): Promise<TokenResponse | TokenResponseWithUser> {
     const { id } = this.tokensService.verify<MfaTokenPayload>(
-        EMAIL_MFA_TOKEN,
-        token,
+      EMAIL_MFA_TOKEN,
+      token,
     );
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(USER_NOT_FOUND);
@@ -403,8 +403,8 @@ export class AuthService {
   async requestPasswordReset(email: string, origin?: string) {
     const emailSafe = safeEmail(email);
     const emailDetails = await this.prisma.email.findFirst({
-        where: { emailSafe },
-        include: { user: true },
+      where: { emailSafe },
+      include: { user: true },
     });
     if (!emailDetails) throw new NotFoundException(USER_NOT_FOUND);
     this.email.send({
@@ -414,12 +414,12 @@ export class AuthService {
         name: emailDetails.user.name,
         minutes: 30,
         link:
-              `${origin ?? this.configService.get<string>('frontendUrl')
-          }/#/change-password?token=${this.tokensService.signJwt(
-            PASSWORD_RESET_TOKEN,
-            { id: emailDetails.user.id },
-            '30m',
-         )}`,
+          `${origin ?? this.configService.get<string>('frontendUrl')
+        }/#/change-password?token=${this.tokensService.signJwt(
+          PASSWORD_RESET_TOKEN,
+          { id: emailDetails.user.id },
+          '30m',
+        )}`,
       },
     });
     return { queued: true };
@@ -433,26 +433,26 @@ export class AuthService {
     ignorePwnedPassword?: boolean,
   ): Promise<TokenResponse> {
     const { id } = this.tokensService.verify<{ id: number }>(
-        PASSWORD_RESET_TOKEN,
-        token,
+      PASSWORD_RESET_TOKEN,
+      token,
     );
     const user = await this.prisma.user.findUnique({
-        where: { id },
-        include: { prefersEmail: true },
+      where: { id },
+      include: { prefersEmail: true },
     });
     if (!user) throw new NotFoundException(USER_NOT_FOUND);
     password = await this.hashAndValidatePassword(
-        password,
-        !!ignorePwnedPassword,
+      password,
+      !!ignorePwnedPassword,
     );
     await this.prisma.user.update({ where: { id }, data: { password } });
     await this.approvedSubnetsService.upsertNewSubnet(id, ipAddress);
     this.email.send({
-        to: `"${user.name}" <${user.prefersEmail.email}>`,
-        template: 'users/password-changed',
-        data: {
-            name: user.name,
-        },
+      to: `"${user.name}" <${user.prefersEmail.email}>`,
+      template: 'users/password-changed',
+      data: {
+        name: user.name,
+      },
     });
     return this.loginResponse(ipAddress, userAgent, user);
   }
@@ -484,9 +484,9 @@ export class AuthService {
     for await (const group of groupsToJoin) {
       await this.prisma.membership.create({
         data: {
-            user: { connect: { id: result.user.id } },
-            group: { connect: { id: group.id } },
-            role: 'MEMBER',
+          user: { connect: { id: result.user.id } },
+          group: { connect: { id: group.id } },
+          role: 'MEMBER',
         },
       });
       this.email.send({
@@ -516,16 +516,16 @@ export class AuthService {
     origin?: string,
   ): Promise<TokenResponse | TokenResponseWithUser> {
     const user = await this.prisma.user.findUnique({
-        where: { id },
-        include: { prefersEmail: true },
+      where: { id },
+      include: { prefersEmail: true },
     });
     if (!user) throw new NotFoundException(USER_NOT_FOUND);
     if (user.twoFactorMethod === 'NONE' || !user.twoFactorSecret)
-        throw new BadRequestException(MFA_NOT_ENABLED);
+      throw new BadRequestException(MFA_NOT_ENABLED);
     if (this.authenticator.check(code, user.twoFactorSecret))
-        return { user: user, token: await this.loginResponse(ipAddress, userAgent, user)};
+      return { user: user, token: await this.loginResponse(ipAddress, userAgent, user)};
     const backupCodes = await this.prisma.backupCode.findMany({
-        where: { user: { id } },
+      where: { user: { id } },
     });
     let usedBackupCode = false;
     for await (const backupCode of backupCodes) {
@@ -541,9 +541,9 @@ export class AuthService {
           const location = await this.geolocationService.getLocation(ipAddress);
           const locationName =
             [
-                location?.city?.names?.en,
-                (location?.subdivisions ?? [])[0]?.names?.en,
-                location?.country?.names?.en,
+              location?.city?.names?.en,
+              (location?.subdivisions ?? [])[0]?.names?.en,
+              location?.country?.names?.en,
             ]
               .filter((i) => i)
               .join(', ') || 'Unknown location';
@@ -599,64 +599,64 @@ export class AuthService {
         countryCode: location?.country?.iso_code,
         userAgent,
         browser:
-            `${ua.getBrowser().name ?? ''} 
+          `${ua.getBrowser().name ?? ''} 
              ${ua.getBrowser().version ?? ''
-                }`.trim() || undefined,
+          }`.trim() || undefined,
         operatingSystem:
-            `${ua.getOS().name ?? ''} ${ua.getOS().version ?? ''}`
-                .replace('Mac OS', 'macOS')
-                .trim() || undefined,
+          `${ua.getOS().name ?? ''} ${ua.getOS().version ?? ''}`
+            .replace('Mac OS', 'macOS')
+            .trim() || undefined,
         user: { connect: { id: user.id } },
       },
     });
     return {
-        accessToken: await this.getAccessToken(user, id),
-        refreshToken: token,
+      accessToken: await this.getAccessToken(user, id),
+      refreshToken: token,
     };
   }
 
   private async mfaResponse(
     user: User & {
-        prefersEmail: Email;
+      prefersEmail: Email;
     },
     forceMethod?: MfaMethod,
   ): Promise<TotpTokenResponse> {
     const mfaTokenPayload: MfaTokenPayload = {
-        type: user.twoFactorMethod,
-        id: user.id,
+      type: user.twoFactorMethod,
+      id: user.id,
     };
     const totpToken = this.tokensService.signJwt(
-        MULTI_FACTOR_TOKEN,
-        mfaTokenPayload,
-        this.configService.get<string>('security.mfaTokenExpiry'),
+      MULTI_FACTOR_TOKEN,
+      mfaTokenPayload,
+      this.configService.get<string>('security.mfaTokenExpiry'),
     );
     if (user.twoFactorMethod === 'EMAIL' || forceMethod === 'EMAIL') {
       this.email.send({
         to: `"${user.name}" <${user.prefersEmail.email}>`,
         template: 'auth/login-link',
         data: {
-            name: user.name,
-            minutes: parseInt(
-            this.configService.get<string>('security.mfaTokenExpiry') ?? '',
-            ),
-            link: `${this.configService.get<string>(
-            'frontendUrl',
-            )}/#/login?2Ftoken=${this.tokensService.signJwt(
-            EMAIL_MFA_TOKEN,
-            { id: user.id },
-            '30m',
-            )}`,
-          },
-        });
+          name: user.name,
+          minutes: parseInt(
+          this.configService.get<string>('security.mfaTokenExpiry') ?? '',
+          ),
+          link: `${this.configService.get<string>(
+          'frontendUrl',
+          )}/#/login?2Ftoken=${this.tokensService.signJwt(
+          EMAIL_MFA_TOKEN,
+          { id: user.id },
+          '30m',
+          )}`,
+        },
+      });
     } else if (user.twoFactorMethod === 'SMS' || forceMethod === 'SMS') {
-        if (!user.twoFactorPhone)
-            throw new BadRequestException(MFA_PHONE_NOT_FOUND);
-        this.twilioService.send({
-          to: user.twoFactorPhone,
-          from: "+16506007741",
-          body: `${this.getOneTimePassword(user.twoFactorSecret)} is your ${this.configService.get<string>('meta.appName') ?? ''
-            } verification code.`,
-        });
+      if (!user.twoFactorPhone)
+        throw new BadRequestException(MFA_PHONE_NOT_FOUND);
+      this.twilioService.send({
+        to: user.twoFactorPhone,
+        from: "+16506007741",
+        body: `${this.getOneTimePassword(user.twoFactorSecret)} is your ${this.configService.get<string>('meta.appName') ?? ''
+        } verification code.`,
+      });
     }
     return {
         totpToken,
@@ -675,46 +675,47 @@ export class AuthService {
     if (!checkLocationOnLogin) return;
     const subnet = anonymize(ipAddress);
     const previousSubnets = await this.prisma.approvedSubnet.findMany({
-        where: { user: { id } },
+      where: { user: { id } },
     });
     let isApproved = false;
     for await (const item of previousSubnets) {
-        if (!isApproved)
-            if (await compare(subnet, item.subnet)) isApproved = true;
+      if (!isApproved)
+        if (await compare(subnet, item.subnet)) isApproved = true;
     }
     if (!isApproved) {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
-            select: { name: true, prefersEmail: true, checkLocationOnLogin: true },
+      const user = await this.prisma.user.findUnique({
+        where: { id },
+        select: { name: true, prefersEmail: true, checkLocationOnLogin: true },
+      });
+      if (!user) throw new NotFoundException(USER_NOT_FOUND);
+      if (!user.checkLocationOnLogin) return;
+      const location = await this.geolocationService.getLocation(ipAddress);
+      const locationName =
+        [
+          location?.city?.names?.en,
+          (location?.subdivisions ?? [])[0]?.names?.en,
+          location?.country?.names?.en,
+        ]
+          .filter((i) => i)
+          .join(', ') || 'Unknown location';
+      if (user.prefersEmail)
+        this.email.send({
+          to: `"${user.name}" <${user.prefersEmail.email}>`,
+          template: 'auth/approve-subnet',
+          data: {
+            name: user.name,
+            locationName,
+            minutes: 30,
+            link:
+              `${origin ?? this.configService.get<string>('frontendUrl')
+              }/auth/link/approve-subnet?token=${this.tokensService.signJwt(
+              APPROVE_SUBNET_TOKEN,
+              { id },
+              '30m',
+              )}`,
+          },
         });
-        if (!user) throw new NotFoundException(USER_NOT_FOUND);
-        if (!user.checkLocationOnLogin) return;
-        const location = await this.geolocationService.getLocation(ipAddress);
-        const locationName =
-            [
-                location?.city?.names?.en,
-                (location?.subdivisions ?? [])[0]?.names?.en,
-                location?.country?.names?.en,
-            ]
-                .filter((i) => i)
-                .join(', ') || 'Unknown location';
-        if (user.prefersEmail)
-            this.email.send({
-                to: `"${user.name}" <${user.prefersEmail.email}>`,
-                template: 'auth/approve-subnet',
-                data: {
-                    name: user.name,
-                    locationName,
-                    minutes: 30,
-                    link: `${origin ?? this.configService.get<string>('frontendUrl')
-                        }/auth/link/approve-subnet?token=${this.tokensService.signJwt(
-                            APPROVE_SUBNET_TOKEN,
-                            { id },
-                            '30m',
-                        )}`,
-                },
-            });
-        throw new UnauthorizedException(UNVERIFIED_LOCATION);
+      throw new UnauthorizedException(UNVERIFIED_LOCATION);
     }
   }
 
@@ -724,17 +725,17 @@ export class AuthService {
     ignorePwnedPassword: boolean,
   ): Promise<string> {
     if (!ignorePwnedPassword) {
-        if (!this.configService.get<boolean>('security.passwordPwnedCheck'))
-            return await hash(
-                password,
-                this.configService.get<number>('security.saltRounds') ?? 10,
-            );
-        if (!(await this.pwnedService.isPasswordSafe(password)))
-            throw new BadRequestException(COMPROMISED_PASSWORD);
+      if (!this.configService.get<boolean>('security.passwordPwnedCheck'))
+        return await hash(
+          password,
+          this.configService.get<number>('security.saltRounds') ?? 10,
+        );
+      if (!(await this.pwnedService.isPasswordSafe(password)))
+        throw new BadRequestException(COMPROMISED_PASSWORD);
     }
     return await hash(
-        password,
-        this.configService.get<number>('security.saltRounds') ?? 10,
+      password,
+      this.configService.get<number>('security.saltRounds') ?? 10,
     );
   }
 
@@ -745,40 +746,40 @@ export class AuthService {
 
     // Add all scopes for user self
     const scopes: string[] = Object.keys(userScopes).map((scope) =>
-        scope.replace('{userId}', user.id.toString()),
+      scope.replace('{userId}', user.id.toString()),
     );
 
     // Add scopes for groups user is part of
     const memberships = await this.prisma.membership.findMany({
-        where: { user: { id: user.id } },
-        select: { id: true, role: true, group: { select: { id: true } } },
+      where: { user: { id: user.id } },
+      select: { id: true, role: true, group: { select: { id: true } } },
     });
     for await (const membership of memberships) {
-        scopes.push(`membership-${membership.id}:*`);
-        const ids = [
-            membership.group.id,
-            ...(await this.recursivelyGetSubgroupIds(membership.group.id)),
-        ];
-        ids.forEach((id) => {
-            if (membership.role === 'OWNER')
-                scopes.push(
-                    ...Object.keys(groupOwnerScopes).map((i) =>
-                        i.replace('{groupId}', id.toString()),
-                    ),
-                );
-            if (membership.role === 'ADMIN')
-                scopes.push(
-                    ...Object.keys(groupAdminScopes).map((i) =>
-                        i.replace('{groupId}', id.toString()),
-                    ),
-                );
-            if (membership.role === 'MEMBER')
-                scopes.push(
-                    ...Object.keys(groupMemberScopes).map((i) =>
-                        i.replace('{groupId}', id.toString()),
-                    ),
-                );
-        });
+      scopes.push(`membership-${membership.id}:*`);
+      const ids = [
+        membership.group.id,
+        ...(await this.recursivelyGetSubgroupIds(membership.group.id)),
+      ];
+      ids.forEach((id) => {
+        if (membership.role === 'OWNER')
+          scopes.push(
+            ...Object.keys(groupOwnerScopes).map((i) =>
+                i.replace('{groupId}', id.toString()),
+            ),
+          );
+        if (membership.role === 'ADMIN')
+          scopes.push(
+            ...Object.keys(groupAdminScopes).map((i) =>
+                i.replace('{groupId}', id.toString()),
+            ),
+          );
+        if (membership.role === 'MEMBER')
+          scopes.push(
+            ...Object.keys(groupMemberScopes).map((i) =>
+                i.replace('{groupId}', id.toString()),
+            ),
+          );
+      });
     }
     return scopes;
   }
@@ -806,15 +807,15 @@ export class AuthService {
     let baseUserId: number | undefined = undefined;
     let mergeUserId: number | undefined = undefined;
     try {
-        const result = this.tokensService.verify<{
-            baseUserId: number;
-            mergeUserId: number;
-        }>(MERGE_ACCOUNTS_TOKEN, token);
-        baseUserId = result.baseUserId;
-        mergeUserId = result.mergeUserId;
+      const result = this.tokensService.verify<{
+        baseUserId: number;
+        mergeUserId: number;
+      }>(MERGE_ACCOUNTS_TOKEN, token);
+      baseUserId = result.baseUserId;
+      mergeUserId = result.mergeUserId;
     } catch (error) { }
     if (!baseUserId || !mergeUserId)
-        throw new BadRequestException(USER_NOT_FOUND);
+      throw new BadRequestException(USER_NOT_FOUND);
     return this.merge(baseUserId, mergeUserId);
   }
 
@@ -823,59 +824,59 @@ export class AuthService {
     mergeUserId: number,
     ): Promise<{ success: true }> {
     const baseUser = await this.prisma.user.findUnique({
-        where: { id: baseUserId },
+      where: { id: baseUserId },
     });
     const mergeUser = await this.prisma.user.findUnique({
-        where: { id: mergeUserId },
+      where: { id: mergeUserId },
     });
     if (!baseUser || !mergeUser) throw new NotFoundException(USER_NOT_FOUND);
 
     const combinedUser: Record<string, any> = {};
     [
-        'checkLocationOnLogin',
-        'countryCode',
-        'gender',
-        'name',
-        'notificationEmails',
-        'active',
-        'prefersLanguage',
-        'prefersColorScheme',
-        'prefersReducedMotion',
-        'profilePictureUrl',
-        'role',
-        'timezone',
-        'twoFactorMethod',
-        'twoFactorPhone',
-        'twoFactorSecret',
-        'attributes',
+      'checkLocationOnLogin',
+      'countryCode',
+      'gender',
+      'name',
+      'notificationEmails',
+      'active',
+      'prefersLanguage',
+      'prefersColorScheme',
+      'prefersReducedMotion',
+      'profilePictureUrl',
+      'role',
+      'timezone',
+      'twoFactorMethod',
+      'twoFactorPhone',
+      'twoFactorSecret',
+      'attributes',
     ].forEach((key) => {
         if (mergeUser[key] != null) combinedUser[key] = mergeUser[key];
     });
     await this.prisma.user.update({
-        where: { id: baseUserId },
-        data: combinedUser,
+      where: { id: baseUserId },
+      data: combinedUser,
     });
 
     for await (const dataType of [
-        this.prisma.membership as Prisma.EmailDelegate,
-        this.prisma.email as Prisma.EmailDelegate,
-        this.prisma.session as Prisma.EmailDelegate,
-        this.prisma.approvedSubnet as Prisma.EmailDelegate,
-        this.prisma.backupCode as Prisma.EmailDelegate,
-        this.prisma.identity as Prisma.EmailDelegate,
-        this.prisma.auditLog as Prisma.EmailDelegate,
-        this.prisma.apiKey as Prisma.EmailDelegate,
+      this.prisma.membership as Prisma.EmailDelegate,
+      this.prisma.email as Prisma.EmailDelegate,
+      this.prisma.session as Prisma.EmailDelegate,
+      this.prisma.approvedSubnet as Prisma.EmailDelegate,
+      this.prisma.backupCode as Prisma.EmailDelegate,
+      this.prisma.identity as Prisma.EmailDelegate,
+      this.prisma.auditLog as Prisma.EmailDelegate,
+      this.prisma.apiKey as Prisma.EmailDelegate,
     ] as Prisma.EmailDelegate[]) {
         for await (const item of await (dataType as Prisma.EmailDelegate).findMany(
-            {
-                where: { user: { id: mergeUserId } },
-                select: { id: true },
-            },
+          {
+            where: { user: { id: mergeUserId } },
+            select: { id: true },
+          },
         ))
-            await (dataType as Prisma.EmailDelegate).update({
-                where: { id: item.id },
-                data: { user: { connect: { id: baseUserId } } },
-            });
+        await (dataType as Prisma.EmailDelegate).update({
+          where: { id: item.id },
+          data: { user: { connect: { id: baseUserId } } },
+        });
     }
 
     await this.prisma.user.delete({ where: { id: mergeUser.id } });
