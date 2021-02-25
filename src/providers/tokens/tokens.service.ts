@@ -14,15 +14,15 @@ import { INVALID_TOKEN } from '../../errors/errors.constants';
 
 @Injectable()
 export class TokensService {
-  constructor(private configService: ConfigService) { }
+  constructor(private configService: ConfigService) {}
 
   /**
-    * Sign a JWT
-    * @param subject - Subject
-    * @param payload - Object payload
-    * @param expiresIn - Expiry string (vercel/ms)
-    * @param options - Signing options
-    */
+   * Sign a JWT
+   * @param subject - Subject
+   * @param payload - Object payload
+   * @param expiresIn - Expiry string (vercel/ms)
+   * @param options - Signing options
+   */
   signJwt(
     subject: string,
     payload: number | string | object | Buffer,
@@ -42,11 +42,11 @@ export class TokensService {
   }
 
   /**
-    * Verify and decode a JWT
-    * @param subject - Subject
-    * @param token - JWT
-    * @param options - Verify options
-    */
+   * Verify and decode a JWT
+   * @param subject - Subject
+   * @param token - JWT
+   * @param options - Verify options
+   */
   verify<T>(subject: string, token: string, options?: VerifyOptions) {
     try {
       return (verify(
@@ -55,32 +55,32 @@ export class TokensService {
         { ...options, subject },
       ) as any) as T;
     } catch (error) {
-        throw new UnauthorizedException(INVALID_TOKEN);
+      throw new UnauthorizedException(INVALID_TOKEN);
     }
   }
 
   /**
-    * Decode a JWT without verifying it
-    * @deprecated Use verify() instead
-    * @param token - JWT
-    * @param options - Decode options
-    */
+   * Decode a JWT without verifying it
+   * @deprecated Use verify() instead
+   * @param token - JWT
+   * @param options - Decode options
+   */
   decode<T>(token: string, options?: DecodeOptions) {
     return decode(token, options) as T;
   }
 
   /**
-    * Generate a UUID
-    */
+   * Generate a UUID
+   */
   generateUuid() {
     return v4();
   }
 
   /**
-    * Generate a cryptographically strong random string
-    * @param length - Length of returned string
-    * @param charactersOrType - Characters or one of the supported types
-    */
+   * Generate a cryptographically strong random string
+   * @param length - Length of returned string
+   * @param charactersOrType - Characters or one of the supported types
+   */
   async generateRandomString(
     length = 32,
     charactersOrType = 'alphanumeric',

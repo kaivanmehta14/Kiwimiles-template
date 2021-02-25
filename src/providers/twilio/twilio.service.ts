@@ -40,8 +40,8 @@ export class TwilioService {
           },
         }),
       )
-      .then(() => { })
-      .catch(() => { });
+      .then(() => {})
+      .catch(() => {});
   }
 
   private async sendSms(options: MessageListInstanceCreateOptions) {

@@ -29,7 +29,7 @@ import { UsersService } from './users.service';
 
 @Controller('users')
 export class UserController {
-  constructor(private usersService: UsersService) { }
+  constructor(private usersService: UsersService) {}
 
   /** Get users */
   @Get()
@@ -70,8 +70,8 @@ export class UserController {
     @Req() request: UserRequest,
   ): Promise<Expose<User>> {
     return this.usersService.deactivateUser(
-        id,
-        request.user.type === 'user' && request.user?.id,
+      id,
+      request.user.type === 'user' && request.user?.id,
     );
   }
 
@@ -84,7 +84,7 @@ export class UserController {
     @UploadedFiles() files: Files,
   ) {
     if (files.length && files[0])
-        return this.usersService.uploadProfilePicture(id, files[0]);
+      return this.usersService.uploadProfilePicture(id, files[0]);
     else throw new BadRequestException();
   }
 
