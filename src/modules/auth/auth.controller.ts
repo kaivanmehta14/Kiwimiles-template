@@ -26,7 +26,7 @@ import { RateLimit } from './rate-limit.decorator';
 @Controller('auth')
 @Public()
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   /** Login to an account */
   @Post('login')
@@ -130,8 +130,6 @@ export class AuthController {
     @Headers('User-Agent') userAgent: string,
     @Body() data: ResetPasswordDto,
   ): Promise<TokenResponse> {
-    console.log(data);
-    console.log(userAgent);
     return this.authService.resetPassword(
       ip,
       userAgent,
