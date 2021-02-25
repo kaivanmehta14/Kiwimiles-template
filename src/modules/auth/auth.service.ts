@@ -1,10 +1,10 @@
 import {
-    BadRequestException,
-    ConflictException,
-    Injectable,
-    NotFoundException,
-    UnauthorizedException,
-    UnprocessableEntityException
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  UnprocessableEntityException
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createDigest, createRandomBytes } from '@otplib/plugin-crypto';
@@ -17,27 +17,27 @@ import { authenticator } from 'otplib';
 import qrcode from 'qrcode';
 import UAParser from 'ua-parser-js';
 import {
-    COMPROMISED_PASSWORD,
-    EMAIL_VERIFIED_CONFLICT,
-    INVALID_CREDENTIALS,
-    INVALID_MFA_CODE,
-    MFA_BACKUP_CODE_USED,
-    MFA_ENABLED_CONFLICT,
-    MFA_NOT_ENABLED,
-    MFA_PHONE_NOT_FOUND,
-    NO_EMAILS,
-    NO_TOKEN_PROVIDED,
-    SESSION_NOT_FOUND,
-    UNVERIFIED_EMAIL,
-    UNVERIFIED_LOCATION,
-    USER_NOT_FOUND
+  COMPROMISED_PASSWORD,
+  EMAIL_VERIFIED_CONFLICT,
+  INVALID_CREDENTIALS,
+  INVALID_MFA_CODE,
+  MFA_BACKUP_CODE_USED,
+  MFA_ENABLED_CONFLICT,
+  MFA_NOT_ENABLED,
+  MFA_PHONE_NOT_FOUND,
+  NO_EMAILS,
+  NO_TOKEN_PROVIDED,
+  SESSION_NOT_FOUND,
+  UNVERIFIED_EMAIL,
+  UNVERIFIED_LOCATION,
+  USER_NOT_FOUND
 } from '../../errors/errors.constants';
 import { safeEmail } from '../../helpers/safe-email';
 import {
-    groupAdminScopes,
-    groupMemberScopes,
-    groupOwnerScopes,
-    userScopes
+  groupAdminScopes,
+  groupMemberScopes,
+  groupOwnerScopes,
+  userScopes
 } from '../../helpers/scopes';
 import { GeolocationService } from '../../providers/geolocation/geolocation.service';
 import { MailService } from '../../providers/mail/mail.service';
@@ -45,50 +45,50 @@ import { Expose } from '../../providers/prisma/prisma.interface';
 import { PrismaService } from '../../providers/prisma/prisma.service';
 import { PwnedService } from '../../providers/pwned/pwned.service';
 import {
-    APPROVE_SUBNET_TOKEN,
-    EMAIL_MFA_TOKEN,
-    EMAIL_VERIFY_TOKEN,
-    LOGIN_ACCESS_TOKEN,
-    MERGE_ACCOUNTS_TOKEN,
-    MULTI_FACTOR_TOKEN,
-    PASSWORD_RESET_TOKEN
+  APPROVE_SUBNET_TOKEN,
+  EMAIL_MFA_TOKEN,
+  EMAIL_VERIFY_TOKEN,
+  LOGIN_ACCESS_TOKEN,
+  MERGE_ACCOUNTS_TOKEN,
+  MULTI_FACTOR_TOKEN,
+  PASSWORD_RESET_TOKEN
 } from '../../providers/tokens/tokens.constants';
 import { TokensService } from '../../providers/tokens/tokens.service';
 import { TwilioService } from '../../providers/twilio/twilio.service';
 import { ApprovedSubnetsService } from '../approved-subnets/approved-subnets.service';
 import { RegisterDto } from './auth.dto';
 import {
-    AccessTokenClaims,
-    MfaTokenPayload,
-    TokenResponse,
-    TokenResponseWithUser,
-    TotpTokenResponse
+  AccessTokenClaims,
+  MfaTokenPayload,
+  TokenResponse,
+  TokenResponseWithUser,
+  TotpTokenResponse
 } from './auth.interface';
 
 @Injectable()
 export class AuthService {
-    authenticator: typeof authenticator;
+  authenticator: typeof authenticator;
 
-    constructor(
-        private prisma: PrismaService,
-        private email: MailService,
-        private configService: ConfigService,
-        private pwnedService: PwnedService,
-        private tokensService: TokensService,
-        private geolocationService: GeolocationService,
-        private approvedSubnetsService: ApprovedSubnetsService,
-        private twilioService: TwilioService,
-    ) {
-        this.authenticator = authenticator.create({
-            window: [
-                this.configService.get<number>('security.totpWindowPast') ?? 0,
-                this.configService.get<number>('security.totpWindowFuture') ?? 0,
-            ],
-            keyEncoder,
-            keyDecoder,
-            createDigest,
-            createRandomBytes,
-        });
+  constructor(
+    private prisma: PrismaService,
+    private email: MailService,
+    private configService: ConfigService,
+    private pwnedService: PwnedService,
+    private tokensService: TokensService,
+    private geolocationService: GeolocationService,
+    private approvedSubnetsService: ApprovedSubnetsService,
+    private twilioService: TwilioService,
+  ) {
+      this.authenticator = authenticator.create({
+        window: [
+            this.configService.get<number>('security.totpWindowPast') ?? 0,
+            this.configService.get<number>('security.totpWindowFuture') ?? 0,
+        ],
+        keyEncoder,
+        keyDecoder,
+        createDigest,
+        createRandomBytes,
+      });
     }
 
     async login(
