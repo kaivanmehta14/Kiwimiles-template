@@ -69,7 +69,7 @@
 - [`9facb61d`](https://github.com/staart/api/commit/9facb61d)  Bump @typescript-eslint/eslint-plugin from 4.14.1 to 4.14.2
 - [`405b1895`](https://github.com/staart/api/commit/405b1895)  Bump @octokit/rest from 18.0.15 to 18.1.0
 - [`e9641a7c`](https://github.com/staart/api/commit/e9641a7c)  Bump @nestjs/config from 0.6.2 to 0.6.3
--
+
 ## v4.0.4 (2021-02-01)
 
 [📝 Release notes](https://github.com/staart/api/releases/tag/v4.0.4) · [💻 Compare](https://github.com/staart/api/compare/v4.0.3...v4.0.4) · [🔖 Tag](https://github.com/staart/api/tree/v4.0.4) · 🗄️ Archive ([zip](https://github.com/staart/api/archive/v4.0.4.zip) · [tar.gz](https://github.com/staart/api/archive/v4.0.4.tar.gz))
