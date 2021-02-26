@@ -95,6 +95,8 @@ model ApiKey {
   group                Group?     @relation("groupApiKey", fields: [groupId], references: [id])
   user                 User?      @relation("userApiKey", fields: [userId], references: [id])
   
+  @@index([groupId], name: "groupId")
+  @@index([userId], name: "userIdAPI")
 }
 
 model ApprovedSubnet {
@@ -109,7 +111,7 @@ model ApprovedSubnet {
   userId      Int
   user        User     @relation("userApprovedSubnet", fields: [userId], references: [id])
   
-  
+  @@index([userId], name: "userIdSubnet")
 }
 
 model BackupCode {
@@ -121,7 +123,7 @@ model BackupCode {
   userId    Int
   user      User     @relation("userBackupCode", fields: [userId], references: [id])
 
-  
+  @@index([userId], name: "userIdBackUpCode")
 }
 
 model CouponCode {
@@ -148,7 +150,7 @@ model Domain {
   verificationCode String
   group            Group    @relation("groupDomain", fields: [groupId], references: [id])
 
- 
+  @@index([groupId], name: "groupIdDomain")
 }
 
 model Identity {
@@ -160,7 +162,7 @@ model Identity {
   userId    Int
   user      User         @relation("userIdentity", fields: [userId], references: [id])
 
-  
+  @@index([userId], name: "userIdIdentity")
 }
 
 model Membership {
@@ -173,7 +175,8 @@ model Membership {
   group     Group          @relation("groupMembership", fields: [groupId], references: [id])
   user      User           @relation("userMembership", fields: [userId], references: [id])
 
- 
+  @@index([groupId], name: "groupIdMembership")
+  @@index([userId], name: "userIdMembership")
 }
 
 model Session {
@@ -192,7 +195,7 @@ model Session {
   userId          Int
   user            User     @relation("userSession", fields: [userId], references: [id])
 
- 
+  @@index([userId], name: "userIdSession")
 }
 
 model Webhook {
@@ -208,7 +211,7 @@ model Webhook {
   url         String
   group       Group     @relation("groupWebhook", fields: [groupId], references: [id])
 
- 
+  @@index([groupId], name: "groupIdWebhook")
 }
 
 model AuditLog {
@@ -233,7 +236,8 @@ model AuditLog {
   apiKey          ApiKey?  @relation("apiKeyAuditLog", fields: [apiKeyId], references: [id])
 
   @@index([apiKeyId], name: "apiKeyId")
-  
+  @@index([groupId], name: "groupIdAuditLog")
+  @@index([userId], name: "userIdAuditLog")
 }
 
 enum Gender {
