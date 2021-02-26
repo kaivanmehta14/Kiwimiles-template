@@ -88,10 +88,10 @@ export class AuthService {
         this.configService.get<number>('security.totpWindowPast') ?? 0,
         this.configService.get<number>('security.totpWindowFuture') ?? 0,
       ],
-    keyEncoder,
-    keyDecoder,
-    createDigest,
-    createRandomBytes,
+      keyEncoder,
+      keyDecoder,
+      createDigest,
+      createRandomBytes,
     });
   }
 
@@ -130,14 +130,14 @@ export class AuthService {
         user.id,
         code,
         origin,
-    );
+      );
     if (user.twoFactorMethod !== 'NONE') return this.mfaResponse(user);
     await this.checkLoginSubnet(
-    ipAddress,
-    userAgent,
-    user.checkLocationOnLogin,
-    user.id,
-    origin,
+      ipAddress,
+      userAgent,
+      user.checkLocationOnLogin,
+      user.id,
+      origin,
     );
     return { user: user, token: await this.loginResponse(ipAddress, userAgent, user)};
   }
@@ -145,10 +145,10 @@ export class AuthService {
   async register(ipAddress: string, _data: RegisterDto): Promise<Expose<User>> {
     const { email, origin, ...data } = _data;
     const emailSafe = safeEmail(email);
-    //const testUser = await this.prisma.user.findFirst({
-    //    where: { emails: { some: { emailSafe } } },
-    //});
-    //if (testUser) throw new ConflictException(EMAIL_USER_CONFLICT);
+    const testUser = await this.prisma.user.findFirst({
+      where: { emails: { some: { emailSafe } } },
+    });
+    if (testUser) throw new ConflictException(EMAIL_USER_CONFLICT);
     const ignorePwnedPassword = !!data.ignorePwnedPassword;
     delete data.ignorePwnedPassword;
 
@@ -158,7 +158,7 @@ export class AuthService {
         .map((word, index) =>
           index === 0 || index === data.name.split(' ').length
             ? (word.charAt(0) ?? '').toUpperCase() +
-            (word.slice(1) ?? '').toLowerCase()
+              (word.slice(1) ?? '').toLowerCase()
             : word,
         )
         .join(' ');
@@ -180,40 +180,40 @@ export class AuthService {
         luminosity: 'light',
       }).replace('#', '')}&color=000000`;
 
-    //if (!data.gender) {
-    //    try {
-    //        const prediction = await axios.get<{
-    //            name: string;
-    //            gender: 'male' | 'female';
-    //            probability: number;
-    //            count: number;
-    //        }>(`https://api.genderize.io/?name=${data.name.split(' ')[0]}`);
-    //        if (
-    //            prediction.data.probability > 0.5 &&
-    //            prediction.data.gender === 'male'
-    //        )
-    //            data.gender = 'MALE';
-    //        if (
-    //            prediction.data.probability > 0.5 &&
-    //            prediction.data.gender === 'female'
-    //        )
-    //            data.gender = 'FEMALE';
-    //    } catch (error) { }
-    //}
+    if (!data.gender) {
+      try {
+        const prediction = await axios.get<{
+          name: string;
+          gender: 'male' | 'female';
+          probability: number;
+          count: number;
+        }>(`https://api.genderize.io/?name=${data.name.split(' ')[0]}`);
+        if (
+          prediction.data.probability > 0.5 &&
+          prediction.data.gender === 'male'
+        )
+          data.gender = 'MALE';
+        if (
+          prediction.data.probability > 0.5 &&
+          prediction.data.gender === 'female'
+        )
+          data.gender = 'FEMALE';
+      } catch (error) {}
+    }
 
-    //if (this.configService.get<boolean>('gravatar.enabled')) {
-    //    for await (const emailString of [email, emailSafe]) {
-    //        const md5Email = createHash('md5').update(emailString).digest('hex');
-    //        try {
-    //            const img = await got(
-    //                `https://www.gravatar.com/avatar/${md5Email}?d=404`,
-    //                { responseType: 'buffer' },
-    //            );
-    //            if (img.body.byteLength > 1)
-    //                data.profilePictureUrl = `https://www.gravatar.com/avatar/${md5Email}?d=mp`;
-    //        } catch (error) { }
-    //    }
-    //}
+    if (this.configService.get<boolean>('gravatar.enabled')) {
+      for await (const emailString of [email, emailSafe]) {
+        const md5Email = createHash('md5').update(emailString).digest('hex');
+        try {
+          const img = await got(
+            `https://www.gravatar.com/avatar/${md5Email}?d=404`,
+            { responseType: 'buffer' },
+          );
+          if (img.body.byteLength > 1)
+            data.profilePictureUrl = `https://www.gravatar.com/avatar/${md5Email}?d=mp`;
+        } catch (error) { }
+      }
+    }
 
     let id: number | undefined = undefined;
     while (!id) {
@@ -330,9 +330,9 @@ export class AuthService {
   }
 
   /**
-    * Get the two-factor authentication QR code
-    * @returns Data URI string with QR code image
-    */
+   * Get the two-factor authentication QR code
+   * @returns Data URI string with QR code image
+   */
   async getTotpQrCode(userId: number): Promise<string> {
     const secret = this.authenticator.generateSecret();
     await this.prisma.user.update({
@@ -476,7 +476,7 @@ export class AuthService {
       where: {
         autoJoinDomain: true,
         domains: {
-        some: { isVerified: true, domain: result.emailSafe.split('@')[1] },
+          some: { isVerified: true, domain: result.emailSafe.split('@')[1] },
         },
       },
       select: { id: true, name: true },
@@ -659,9 +659,9 @@ export class AuthService {
       });
     }
     return {
-        totpToken,
-        type: forceMethod || user.twoFactorMethod,
-        multiFactorRequired: true,
+      totpToken,
+      type: forceMethod || user.twoFactorMethod,
+      multiFactorRequired: true,
     };
   }
 
@@ -712,13 +712,12 @@ export class AuthService {
               APPROVE_SUBNET_TOKEN,
               { id },
               '30m',
-              )}`,
+            )}`,
           },
         });
       throw new UnauthorizedException(UNVERIFIED_LOCATION);
     }
   }
-
 
   async hashAndValidatePassword(
     password: string,
@@ -867,12 +866,12 @@ export class AuthService {
       this.prisma.auditLog as Prisma.EmailDelegate,
       this.prisma.apiKey as Prisma.EmailDelegate,
     ] as Prisma.EmailDelegate[]) {
-        for await (const item of await (dataType as Prisma.EmailDelegate).findMany(
-          {
-            where: { user: { id: mergeUserId } },
-            select: { id: true },
-          },
-        ))
+      for await (const item of await (dataType as Prisma.EmailDelegate).findMany(
+        {
+          where: { user: { id: mergeUserId } },
+          select: { id: true },
+        },
+      ))
         await (dataType as Prisma.EmailDelegate).update({
           where: { id: item.id },
           data: { user: { connect: { id: baseUserId } } },
