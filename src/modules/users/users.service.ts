@@ -41,7 +41,7 @@ export class UsersService {
 
   async getUser(id: number): Promise<Expose<User>> {
     const user = await this.prisma.user.findUnique({
-        where: { id },
+      where: { id },
     });
     if (!user) throw new NotFoundException(USER_NOT_FOUND);
     return this.prisma.expose<User>(user);
@@ -135,7 +135,7 @@ export class UsersService {
         to: `"${user.name}" <${user.prefersEmail.email}>`,
         template: 'users/deactivated',
         data: {
-            name: user.name,
+          name: user.name,
         },
       });
     return this.prisma.expose<User>(user);
@@ -165,7 +165,7 @@ export class UsersService {
     if (!user) throw new NotFoundException(USER_NOT_FOUND);
     if (user.id === userId) throw new NotFoundException(USER_NOT_FOUND);
     const minutes = parseInt(
-        this.configService.get<string>('security.mergeUsersTokenExpiry') ?? '',
+      this.configService.get<string>('security.mergeUsersTokenExpiry') ?? '',
     );
     this.email.send({
       to: `"${user.name}" <${user.prefersEmail.email}>`,
@@ -174,16 +174,16 @@ export class UsersService {
         name: user.name,
         minutes,
         link: `${this.configService.get<string>(
-        'frontendUrl',
+          'frontendUrl',
         )}/auth/link/merge-accounts?token=${this.tokensService.signJwt(
-        MERGE_ACCOUNTS_TOKEN,
-        { baseUserId: userId, mergeUserId: user.id },
-        `${minutes}m`,
+          MERGE_ACCOUNTS_TOKEN,
+          { baseUserId: userId, mergeUserId: user.id },
+          `${minutes}m`,
         )}`,
       },
     });
     return { queued: true };
-   }
+  }
 
   async uploadProfilePicture(
     id: number,
