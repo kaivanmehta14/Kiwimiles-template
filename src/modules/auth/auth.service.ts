@@ -415,7 +415,7 @@ export class AuthService {
         minutes: 30,
         link:
           `${origin ?? this.configService.get<string>('frontendUrl')
-        }/#/change-password?token=${this.tokensService.signJwt(
+        }/#/reset-password?token=${this.tokensService.signJwt(
           PASSWORD_RESET_TOKEN,
           { id: emailDetails.user.id },
           '30m',
