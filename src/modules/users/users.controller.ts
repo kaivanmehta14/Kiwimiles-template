@@ -59,7 +59,7 @@ export class UserController {
     @Param('userId', ParseIntPipe) id: number,
     @Body() data: UpdateUserDto,
   ): Promise<Expose<User>> {
-    return this.usersService.updateUser(id, data, request.user?.role);
+    return this.usersService.updateUser(id, data, request.user.role);
   }
 
   /** Delete a user */

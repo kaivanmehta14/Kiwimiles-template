@@ -72,6 +72,7 @@ export interface Configuration {
     retries: number;
     twilioAccountSid: string;
     twilioAuthToken: string;
+    phoneNumber: string;
   };
 
   payments: {

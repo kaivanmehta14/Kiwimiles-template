@@ -12,6 +12,9 @@ export class ScopesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<UserRequest>();
     if (!scopes) return true;
     const user: AccessTokenParsed = request.user;
+    if(request.params['userId']) {
+      request.params['userId'] = (request.user.id).toString();
+    }
     let authorized = false;
     if (!user) return false;
     if (user.scopes.indexOf('*') > -1) return true;
@@ -19,8 +22,8 @@ export class ScopesGuard implements CanActivate {
       for (let scope of scopes) {
         for (const key in request.params) {
           scope = scope.replace(`{${key}}`, request.params[key]);
-          authorized = authorized || minimatch(scope, userScope);
         }
+        authorized = authorized || minimatch(scope, userScope);
         if (authorized) return true;
       }
     }
