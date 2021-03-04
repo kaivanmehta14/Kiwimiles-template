@@ -59,7 +59,7 @@ import {
   AccessTokenClaims,
   MfaTokenPayload,
   TokenResponse,
-  TotpTokenResponse, TokenResponseWithUser,
+  TotpTokenResponse,
 } from './auth.interface';
 import {
   groupAdminScopes,
@@ -102,7 +102,7 @@ export class AuthService {
     password?: string,
     code?: string,
     origin?: string,
-  ): Promise<TokenResponse | TotpTokenResponse | TokenResponseWithUser> {
+  ): Promise<TokenResponse | TotpTokenResponse> {
     const emailSafe = safeEmail(email);
     const user = await this.prisma.user.findFirst({
       where: { emails: { some: { emailSafe } } },
@@ -139,7 +139,7 @@ export class AuthService {
       user.id,
       origin,
     );
-    return { user: user, token: await this.loginResponse(ipAddress, userAgent, user)};
+    return this.loginResponse(ipAddress, userAgent, user);
   }
 
   async register(ipAddress: string, _data: RegisterDto): Promise<Expose<User>> {
@@ -377,7 +377,7 @@ export class AuthService {
     token: string,
     code: string,
     origin?: string,
-  ): Promise<TokenResponse | TokenResponseWithUser> {
+  ): Promise<TokenResponse> {
     const { id } = this.tokensService.verify<MfaTokenPayload>(
       MULTI_FACTOR_TOKEN,
       token,
@@ -389,7 +389,7 @@ export class AuthService {
     ipAddress: string,
     userAgent: string,
     token: string,
-  ): Promise<TokenResponse | TokenResponseWithUser> {
+  ): Promise<TokenResponse> {
     const { id } = this.tokensService.verify<MfaTokenPayload>(
       EMAIL_MFA_TOKEN,
       token,
@@ -397,7 +397,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(USER_NOT_FOUND);
     await this.approvedSubnetsService.upsertNewSubnet(id, ipAddress);
-    return { user: user, token: await this.loginResponse(ipAddress, userAgent, user)};
+    return this.loginResponse(ipAddress, userAgent, user);
   }
 
   async requestPasswordReset(email: string, origin?: string) {
@@ -514,7 +514,7 @@ export class AuthService {
     id: number,
     code: string,
     origin?: string,
-  ): Promise<TokenResponse | TokenResponseWithUser> {
+  ): Promise<TokenResponse> {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: { prefersEmail: true },
@@ -523,7 +523,7 @@ export class AuthService {
     if (user.twoFactorMethod === 'NONE' || !user.twoFactorSecret)
       throw new BadRequestException(MFA_NOT_ENABLED);
     if (this.authenticator.check(code, user.twoFactorSecret))
-      return { user: user, token: await this.loginResponse(ipAddress, userAgent, user)};
+      return this.loginResponse(ipAddress, userAgent, user);
     const backupCodes = await this.prisma.backupCode.findMany({
       where: { user: { id } },
     });
@@ -563,7 +563,7 @@ export class AuthService {
       }
     }
     if (!usedBackupCode) throw new UnauthorizedException(INVALID_MFA_CODE);
-    return { user: user, token: await this.loginResponse(ipAddress, userAgent, user)};
+    return this.loginResponse(ipAddress, userAgent, user);
   }
 
   private async getAccessToken(user: User, sessionId: number): Promise<string> {

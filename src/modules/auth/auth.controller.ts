@@ -18,7 +18,7 @@ import {
   TotpLoginDto,
   VerifyEmailDto,
 } from './auth.dto';
-import { TokenResponse, TokenResponseWithUser, TotpTokenResponse } from './auth.interface';
+import { TokenResponse, TotpTokenResponse } from './auth.interface';
 import { AuthService } from './auth.service';
 import { Public } from './public.decorator';
 import { RateLimit } from './rate-limit.decorator';
@@ -37,7 +37,7 @@ export class AuthController {
     @Ip() ip: string,
     @Headers('User-Agent') userAgent: string,
     @Headers('Origin') origin?: string,
-  ): Promise<TokenResponse | TotpTokenResponse | TokenResponseWithUser> {
+  ): Promise<TokenResponse | TotpTokenResponse> {
     return this.authService.login(
       ip,
       userAgent,
@@ -147,7 +147,7 @@ export class AuthController {
     @Ip() ip: string,
     @Headers('User-Agent') userAgent: string,
     @Body('origin') origin?: string,
-  ): Promise<TokenResponse | TokenResponseWithUser> {
+  ): Promise<TokenResponse> {
     return this.authService.loginWithTotp(
       ip,
       userAgent,
@@ -164,7 +164,7 @@ export class AuthController {
     @Body('token') token: string,
     @Ip() ip: string,
     @Headers('User-Agent') userAgent: string,
-  ): Promise<TokenResponse | TokenResponseWithUser> {
+  ): Promise<TokenResponse> {
     return this.authService.loginWithEmailToken(ip, userAgent, token);
   }
 
