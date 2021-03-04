@@ -12,7 +12,7 @@ export class ScopesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<UserRequest>();
     if (!scopes) return true;
     const user: AccessTokenParsed = request.user;
-    if(request.params['userId']) {
+    if(request.params['userId'] && isNaN(+request.params['userId'])) {
       request.params['userId'] = (request.user.id).toString();
     }
     let authorized = false;
