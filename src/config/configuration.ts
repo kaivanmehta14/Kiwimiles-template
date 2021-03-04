@@ -96,7 +96,6 @@ const configuration: Configuration = {
     retries: int(process.env.SMS_FAIL_RETRIES, 3),
     twilioAccountSid: process.env.TWILIO_ACCOUNT_SID ?? '',
     twilioAuthToken: process.env.TWILIO_AUTH_TOKEN ?? '',
-    phoneNumber: process.env.TWILIO_CONTACT_NUMBER ?? ''
   },
   payments: {
     stripeApiKey: process.env.STRIPE_API_KEY ?? '',

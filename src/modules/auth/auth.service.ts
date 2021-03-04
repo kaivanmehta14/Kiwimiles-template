@@ -653,7 +653,7 @@ export class AuthService {
         throw new BadRequestException(MFA_PHONE_NOT_FOUND);
       this.twilioService.send({
         to: user.twoFactorPhone,
-        from: this.configService.get<string>('sms.phoneNumber'),
+        from: process.env.TWILIO_PHONE_NUMBER,
         body: `${this.getOneTimePassword(user.twoFactorSecret)} is your ${this.configService.get<string>('meta.appName') ?? ''
         } verification code.`,
       });
