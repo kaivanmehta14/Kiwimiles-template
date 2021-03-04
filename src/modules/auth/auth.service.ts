@@ -413,9 +413,9 @@ export class AuthService {
       data: {
         name: emailDetails.user.name,
         minutes: 30,
-        link:
-          `${origin ?? this.configService.get<string>('frontendUrl')
-        }/#/reset-password?token=${this.tokensService.signJwt(
+        link: `${
+          origin ?? this.configService.get<string>('frontendUrl')
+        }/auth/link/reset-password?token=${this.tokensService.signJwt(
           PASSWORD_RESET_TOKEN,
           { id: emailDetails.user.id },
           '30m',
@@ -640,12 +640,12 @@ export class AuthService {
           this.configService.get<string>('security.mfaTokenExpiry') ?? '',
           ),
           link: `${this.configService.get<string>(
-          'frontendUrl',
-          )}/#/login?2Ftoken=${this.tokensService.signJwt(
-          EMAIL_MFA_TOKEN,
-          { id: user.id },
-          '30m',
-          )}`,
+            'frontendUrl',
+          )}/auth/link/login?2Ftoken=${this.tokensService.signJwt(
+            EMAIL_MFA_TOKEN,
+            { id: user.id },
+            '30m',
+            )}`,
         },
       });
     } else if (user.twoFactorMethod === 'SMS' || forceMethod === 'SMS') {
