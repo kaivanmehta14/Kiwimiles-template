@@ -1,5 +1,5 @@
 {
-  "name": "property-review",
+  "name": "kiwimiles-generic",
   "template": "staart/api",
   "version": "0.0.0",
   "description": "SaaS backend framework with users, payments, APIs, and more",
