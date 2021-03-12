@@ -83,6 +83,26 @@ export class MailService {
           content: markdown,
         },
       ];
+      options.attachments = [{
+        filename: 'kiwimiles-logo.png',
+        path: __dirname + '/assets/kiwimiles-logo.png',
+        cid: 'logo@kiwimiles'
+      },
+      {
+        filename: 'facebook.png',
+        path: __dirname + '/assets/facebook.png',
+        cid: 'logo@fb-km'
+      },
+      {
+        filename: 'linkedin.png',
+        path: __dirname + '/assets/linkedin.png',
+        cid: 'logo@in-km'
+      },
+      {
+        filename: 'globe.png',
+        path: __dirname + '/assets/globe.png',
+        cid: 'logo@globe-km'
+      }]
     }
     return this.transport.sendMail(options);
   }
