@@ -5,7 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Ip,
-  Post,
+  Post
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { Expose } from '../../providers/prisma/prisma.interface';
