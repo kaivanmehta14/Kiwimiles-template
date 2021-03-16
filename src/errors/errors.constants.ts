@@ -13,6 +13,7 @@ export const INVOICE_NOT_FOUND = '404012: Invoice not found';
 export const SUBSCRIPTION_NOT_FOUND = '404013: Subscription not found';
 export const SOURCE_NOT_FOUND = '404014: Source not found';
 export const WEBHOOK_NOT_FOUND = '404015: Webhook not found';
+export const ROLE_NOT_FOUND = '404016: Role not found';
 
 export const UNAUTHORIZED_RESOURCE = '401000: Insufficient permission';
 export const INVALID_CREDENTIALS = '401001: Invalid credentials';

@@ -51,6 +51,13 @@ export class UserController {
     return this.usersService.getUser(id);
   }
 
+  /** Get previlages of a user*/
+  @Get(':userId/privileges')
+  @Scopes('user-*:read-info')
+  async getUserPrevilages(@Param('userId', ParseIntPipe) id: number): Promise<object[]> {
+    return this.usersService.getUserPrivilege(id);
+  }
+
   /** Update a user */
   @Patch(':userId')
   @Scopes('user-{userId}:write-info')

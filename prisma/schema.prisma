@@ -65,6 +65,35 @@ model Group {
   @@index([parentId], name: "index_group_parentId")
 }
 
+model Role {
+  id                Int          @id @default(autoincrement())
+  createdAt         DateTime     @default(now())
+  name              String
+}
+
+model Scope {
+  id                Int          @id @default(autoincrement())
+  createdAt         DateTime     @default(now())
+  name              String
+  privileges        String?
+}
+
+model RolesOnGroups {
+  role        Role     @relation(fields: [roleId], references: [id])
+  roleId      Int     
+  group       Group    @relation(fields: [groupId], references: [id])
+  groupId     Int     
+  @@id([roleId, groupId])
+}
+
+model ScopesOnRoles {
+  scope       Scope    @relation(fields: [scopeId], references: [id])
+  scopeId     Int  
+  role        Role     @relation(fields: [roleId], references: [id])
+  roleId      Int     
+  @@id([scopeId, roleId])
+}
+
 model Email {
   createdAt  DateTime @default(now())
   email      String   @unique

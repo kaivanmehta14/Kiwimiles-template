@@ -26,6 +26,7 @@ import { TokensService } from '../../providers/tokens/tokens.service';
 import { ApiKeysService } from '../api-keys/api-keys.service';
 import { AuthService } from '../auth/auth.service';
 import { PasswordUpdateInput } from './users.interface';
+import {CommonService} from '../../helpers/common-functions';
 
 @Injectable()
 export class UsersService {
@@ -211,5 +212,56 @@ export class UsersService {
         ),
       },
     });
+  }
+
+  public async getUserPrivilege(id: number): Promise<object[]> {
+  
+    const groupIds: number[] = (await this.prisma.membership.findMany({
+      select: {
+        group: {
+          select: {
+            id: true
+          }
+        }
+      },
+      where: {userId: id}
+    }))
+    .map(object => object.group.id);
+
+    const roleIds: number[] = (await this.prisma.rolesOnGroups.findMany({
+      select: {
+        role: {
+          select:{
+            id: true
+          }
+        }
+      },
+      where: {
+        groupId: {
+          in: groupIds
+        }
+      }
+    }))
+    .map(object => object.role.id);
+
+    const scopes: {name:string, privileges:string}[] = (await this.prisma.scopesOnRoles.findMany({
+      select: {
+        scope: {
+          select:{
+            name: true,
+            privileges: true
+          }
+        }
+      },
+      where: {
+        roleId: {
+          in: roleIds
+        }
+      }
+    }))
+    .map(object => object.scope);
+
+    const uniqueScopes: object[] = CommonService.findUnique(scopes, "name");
+    return uniqueScopes;
   }
 }
