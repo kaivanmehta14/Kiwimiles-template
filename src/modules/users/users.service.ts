@@ -214,54 +214,31 @@ export class UsersService {
     });
   }
 
-  public async getUserPrivilege(id: number): Promise<object[]> {
-  
+  async getUserPrivilege(userId:number): Promise<string[]>{
+    
     const groupIds: number[] = (await this.prisma.membership.findMany({
-      select: {
-        group: {
-          select: {
-            id: true
-          }
-        }
-      },
-      where: {userId: id}
-    }))
-    .map(object => object.group.id);
+      select: {groupId: true},
+      where: { userId: userId }
+    })).map(result => result.groupId);
 
     const roleIds: number[] = (await this.prisma.rolesOnGroups.findMany({
-      select: {
-        role: {
-          select:{
-            id: true
-          }
-        }
-      },
-      where: {
+      select: {roleId: true},
+      where: { 
         groupId: {
           in: groupIds
-        }
+        } 
       }
-    }))
-    .map(object => object.role.id);
+    })).map(result => result.roleId);
 
-    const scopes: {name:string, privileges:string}[] = (await this.prisma.scopesOnRoles.findMany({
-      select: {
-        scope: {
-          select:{
-            name: true,
-            privileges: true
-          }
-        }
-      },
-      where: {
+    const scopes: string[] = (await this.prisma.scopesOnRoles.findMany({
+      select: {scope: true},
+      where: { 
         roleId: {
           in: roleIds
-        }
+        } 
       }
-    }))
-    .map(object => object.scope);
+    })).map(result => result.scope.name);
 
-    const uniqueScopes: object[] = CommonService.findUnique(scopes, "name");
-    return uniqueScopes;
+    return scopes;
   }
 }

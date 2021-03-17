@@ -68,6 +68,7 @@ import {
   userScopes,
 } from '../../helpers/scopes';
 import axios from 'axios';
+import { CommonService } from 'src/helpers/common-functions';
 
 @Injectable()
 export class AuthService {
@@ -566,8 +567,19 @@ export class AuthService {
     return this.loginResponse(ipAddress, userAgent, user);
   }
 
+  googleLogin(req) {
+    if (!req.user) {
+      return 'No user from google';
+    }
+
+    return {
+      message: 'User information from google',
+      user: req.user
+    }
+  }
+  
   private async getAccessToken(user: User, sessionId: number): Promise<string> {
-    const scopes = await this.getScopes(user);
+    const scopes = await this.getUserScopes(user);
     const payload: AccessTokenClaims = {
       id: user.id,
       sessionId,
@@ -738,7 +750,7 @@ export class AuthService {
     );
   }
 
-  /** Get logging in scopes for a user */
+  /** Get logging in scopes for a user (currenly it's obsolete)*/
   async getScopes(user: User): Promise<string[]> {
     // Superadmins can do anything
     if (user.role === 'SUDO') return ['*'];
@@ -780,6 +792,50 @@ export class AuthService {
           );
       });
     }
+    return scopes;
+  }
+
+  /** Get logging in scopes for a user (currently in use)*/
+  async getUserScopes(user: User): Promise<string[]> {
+    // Superadmins can do anything
+    if (user.role === 'SUDO') return ['*'];
+
+    // Add all scopes for user self
+    const scopes: string[] = (await this.getUserPrivileges(user.id))
+    .map((scope) => scope.name.replace('{userId}', user.id.toString()));
+
+    // Add scopes for groups user is part of
+    // const memberships = await this.prisma.membership.findMany({
+    //   where: { user: { id: user.id } },
+    //   select: { id: true, role: true, group: { select: { id: true } } },
+    // });
+    // for await (const membership of memberships) {
+    //   scopes.push(`membership-${membership.id}:*`);
+    //   const ids = [
+    //     membership.group.id,
+    //     ...(await this.recursivelyGetSubgroupIds(membership.group.id)),
+    //   ];
+    //   ids.forEach((id) => {
+    //     if (membership.role === 'OWNER')
+    //       scopes.push(
+    //         ...Object.keys(groupOwnerScopes).map((i) =>
+    //             i.replace('{groupId}', id.toString()),
+    //         ),
+    //       );
+    //     if (membership.role === 'ADMIN')
+    //       scopes.push(
+    //         ...Object.keys(groupAdminScopes).map((i) =>
+    //             i.replace('{groupId}', id.toString()),
+    //         ),
+    //       );
+    //     if (membership.role === 'MEMBER')
+    //       scopes.push(
+    //         ...Object.keys(groupMemberScopes).map((i) =>
+    //             i.replace('{groupId}', id.toString()),
+    //         ),
+    //       );
+    //   });
+    // }
     return scopes;
   }
 
@@ -880,5 +936,56 @@ export class AuthService {
 
     await this.prisma.user.delete({ where: { id: mergeUser.id } });
     return { success: true };
+  }
+
+  private async getUserPrivileges(id: number): Promise<{name:string, privileges:string}[]> {
+  
+    const groupIds: number[] = (await this.prisma.membership.findMany({
+      select: {
+        group: {
+          select: {
+            id: true
+          }
+        }
+      },
+      where: {userId: id}
+    }))
+    .map(object => object.group.id);
+
+    const roleIds: number[] = (await this.prisma.rolesOnGroups.findMany({
+      select: {
+        role: {
+          select:{
+            id: true
+          }
+        }
+      },
+      where: {
+        groupId: {
+          in: groupIds
+        }
+      }
+    }))
+    .map(object => object.role.id);
+
+    const scopes: {name:string, privileges:string}[] = (await this.prisma.scopesOnRoles.findMany({
+      select: {
+        scope: {
+          select:{
+            name: true,
+            privileges: true
+          }
+        }
+      },
+      where: {
+        roleId: {
+          in: roleIds
+        }
+      }
+    }))
+    .map(object => object.scope);
+
+    const uniqueScopes: {name:string, privileges:string}[] = CommonService.findUnique(scopes, "name");
+    return uniqueScopes;
   }
 }
