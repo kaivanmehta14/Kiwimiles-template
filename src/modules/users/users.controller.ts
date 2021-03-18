@@ -53,7 +53,7 @@ export class UserController {
 
   /** Get previlages of a user*/
   @Get(':userId/privileges')
-  @Scopes('user-{userId}:read-info')
+  @Scopes('user-{userId}:generic')
   async getUserPrevilages(@Param('userId', ParseIntPipe) id: number): Promise<string[]> {
     return this.usersService.getUserPrivilege(id);
   }
