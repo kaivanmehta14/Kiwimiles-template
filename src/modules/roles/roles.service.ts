@@ -5,7 +5,7 @@ import {
     InternalServerErrorException,
     NotFoundException,
   } from '@nestjs/common';
-  import type { Prisma, RolesOnGroups, UserRole } from '@prisma/client';
+  import type { Prisma, RolesOnGroups, ScopesOnRoles, UserRole } from '@prisma/client';
   import { Role, Group, Scope } from '@prisma/client';
 import { String } from 'aws-sdk/clients/appstream';
 import { Number } from 'aws-sdk/clients/iot';
@@ -207,7 +207,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
     public async updateRoleScopes(
       id: number,
       data: RoleDto[]
-    ): Promise<void> {
+    ): Promise<ScopesOnRoles[]> {
       const role: Role = await this.prisma.role.findUnique({
         where: {
           id: id
@@ -232,20 +232,23 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
           }
         }
       });
-      scopes.forEach(async scope => {      //find an alternative(createMany or array is not happening)
-        await this.prisma.scopesOnRoles.create({
+      const createPromises: Promise<ScopesOnRoles>[] = [];
+      scopes.forEach(async scope => {      
+        createPromises.push(
+           this.prisma.scopesOnRoles.create({
           data: {
             scope: { connect: { id : scope.id } },
             role: { connect: { id: role.id } }
           }
-        })
-      }) 
+        }))
+      })
+      return await this.prisma.$transaction(createPromises); 
     }
   
     public async updateGroupRoles(
       id: number,
       data: RoleDto[]
-    ): Promise<void> {
+    ): Promise<RolesOnGroups[]> {
       const group: Group = await this.prisma.group.findUnique({
         where: {
           id: id
@@ -270,14 +273,18 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
           }
         }
       });
-      roles.forEach(async role => {      //find an alternative(createMany or array is not happening)
-        await this.prisma.rolesOnGroups.create({
-          data: {
-            group: { connect: { id : group.id } },
-            role: { connect: { id: role.id } }
-          }
-        })
-      }) 
+      const createPromises: Promise<RolesOnGroups>[] = [];
+      roles.forEach(async role => {      
+        createPromises.push(
+          this.prisma.rolesOnGroups.create({
+            data: {
+              group: { connect: { id : group.id } },
+              role: { connect: { id: role.id } }
+            }
+          })
+        )
+      })
+      return await this.prisma.$transaction(createPromises);
     }
     
     public async deleteGroupRole(groupId: number,  data: RevokeGroupRoleDto): Promise<Prisma.BatchPayload> {

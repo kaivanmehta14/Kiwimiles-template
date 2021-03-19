@@ -215,7 +215,15 @@ export class UsersService {
   }
 
   async getUserPrivilege(userId:number): Promise<string[]>{
-    
+    const userRole: string = (await this.prisma.user.findUnique({
+      select: {
+        role: true
+      },
+      where: {
+        id: userId
+      }
+    })).role;
+    if(userRole == "SUDO") return ["*"];
     const groupIds: number[] = (await this.prisma.membership.findMany({
       select: {groupId: true},
       where: { userId: userId }

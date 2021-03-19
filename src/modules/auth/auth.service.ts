@@ -803,39 +803,39 @@ export class AuthService {
     // Add all scopes for user self
     const scopes: string[] = (await this.getUserPrivileges(user.id))
     .map((scope) => scope.name.replace('{userId}', user.id.toString()));
-
+    scopes.push(`user-${user.id.toString()}:generic`)
     // Add scopes for groups user is part of
-    // const memberships = await this.prisma.membership.findMany({
-    //   where: { user: { id: user.id } },
-    //   select: { id: true, role: true, group: { select: { id: true } } },
-    // });
-    // for await (const membership of memberships) {
-    //   scopes.push(`membership-${membership.id}:*`);
-    //   const ids = [
-    //     membership.group.id,
-    //     ...(await this.recursivelyGetSubgroupIds(membership.group.id)),
-    //   ];
-    //   ids.forEach((id) => {
-    //     if (membership.role === 'OWNER')
-    //       scopes.push(
-    //         ...Object.keys(groupOwnerScopes).map((i) =>
-    //             i.replace('{groupId}', id.toString()),
-    //         ),
-    //       );
-    //     if (membership.role === 'ADMIN')
-    //       scopes.push(
-    //         ...Object.keys(groupAdminScopes).map((i) =>
-    //             i.replace('{groupId}', id.toString()),
-    //         ),
-    //       );
-    //     if (membership.role === 'MEMBER')
-    //       scopes.push(
-    //         ...Object.keys(groupMemberScopes).map((i) =>
-    //             i.replace('{groupId}', id.toString()),
-    //         ),
-    //       );
-    //   });
-    // }
+    const memberships = await this.prisma.membership.findMany({
+      where: { user: { id: user.id } },
+      select: { id: true, role: true, group: { select: { id: true } } },
+    });
+    for await (const membership of memberships) {
+      scopes.push(`membership-${membership.id}:*`);
+      const ids = [
+        membership.group.id,
+        ...(await this.recursivelyGetSubgroupIds(membership.group.id)),
+      ];
+      ids.forEach((id) => {
+        if (membership.role === 'OWNER')
+          scopes.push(
+            ...Object.keys(groupOwnerScopes).map((i) =>
+                i.replace('{groupId}', id.toString()),
+            ),
+          );
+        if (membership.role === 'ADMIN')
+          scopes.push(
+            ...Object.keys(groupAdminScopes).map((i) =>
+                i.replace('{groupId}', id.toString()),
+            ),
+          );
+        if (membership.role === 'MEMBER')
+          scopes.push(
+            ...Object.keys(groupMemberScopes).map((i) =>
+                i.replace('{groupId}', id.toString()),
+            ),
+          );
+      });
+    }
     return scopes;
   }
 

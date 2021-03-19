@@ -15,7 +15,7 @@ import {
     UseInterceptors,
   } from '@nestjs/common';
   import { FilesInterceptor } from '@nestjs/platform-express';
-  import { Role, RolesOnGroups, Scope } from '@prisma/client';
+  import { Role, RolesOnGroups, Scope, ScopesOnRoles } from '@prisma/client';
   import { Files } from '../../helpers/interfaces';
   import { CursorPipe } from '../../pipes/cursor.pipe';
   import { OptionalIntPipe } from '../../pipes/optional-int.pipe';
@@ -98,7 +98,7 @@ import {
     async updateRoleScopes(
       @Param('roleId', ParseIntPipe) id: number,
       @Body() data: ScopeDto[],
-    ): Promise<void> {
+    ): Promise<ScopesOnRoles[]> {
       return this.roleservice.updateRoleScopes(id, data);
     }
 
@@ -108,7 +108,7 @@ import {
     async updateGroupRoles(
       @Param('groupId', ParseIntPipe) id: number,
       @Body() data: RoleDto[],
-    ): Promise<void> {
+    ): Promise<RolesOnGroups[]> {
       return this.roleservice.updateGroupRoles(id, data);
     }
 

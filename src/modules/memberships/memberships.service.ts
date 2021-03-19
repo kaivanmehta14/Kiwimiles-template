@@ -188,7 +188,8 @@ export class MembershipsService {
     let user: Expose<User> | null = userResult
       ? this.prisma.expose<User>(userResult) : null;
     if (!user)
-      user = await this.auth.register(ipAddress, { name: data.email, ...data });
+      throw new NotFoundException("user not found")
+      //user = await this.auth.register(ipAddress, { name: data.email, ...data });
 
     const membershipResult = await this.prisma.membership.findFirst({
       where: {
