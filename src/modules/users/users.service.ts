@@ -97,7 +97,7 @@ export class UsersService {
       this.email.send({
         to: `"${user.name}" <${user.prefersEmail.email}>`,
         template: 'users/password-changed',
-        data: {
+        passwordChangedNotificationData: {
           name: user.name,
         },
       });
@@ -135,7 +135,7 @@ export class UsersService {
       this.email.send({
         to: `"${user.name}" <${user.prefersEmail.email}>`,
         template: 'users/deactivated',
-        data: {
+        deactivatedNotificationData: {
           name: user.name,
         },
       });
@@ -171,7 +171,7 @@ export class UsersService {
     this.email.send({
       to: `"${user.name}" <${user.prefersEmail.email}>`,
       template: 'users/merge-request',
-      data: {
+      mergeRequestData: {
         name: user.name,
         minutes,
         link: `${this.configService.get<string>(

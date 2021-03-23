@@ -13,6 +13,8 @@ import { ApprovedSubnetsService } from '../approved-subnets/approved-subnets.ser
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { StaartStrategy } from './staart.strategy';
+import { GoogleStrategy } from './google.strategy';
+import { FacebookStrategy } from './facebook.strategy';
 
 @Module({
   imports: [
@@ -29,6 +31,6 @@ import { StaartStrategy } from './staart.strategy';
   ],
   controllers: [AuthController],
   exports: [AuthService],
-  providers: [AuthService, StaartStrategy, ApprovedSubnetsService],
+  providers: [AuthService, StaartStrategy, ApprovedSubnetsService, GoogleStrategy, FacebookStrategy],
 })
 export class AuthModule {}

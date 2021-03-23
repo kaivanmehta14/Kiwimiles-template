@@ -266,7 +266,7 @@ export class AuthService {
       template: resend
         ? 'auth/resend-email-verification'
         : 'auth/email-verification',
-      data: {
+      emailVerificationData: {
         name: emailDetails.user.name,
         days: 7,
         link:
@@ -411,7 +411,7 @@ export class AuthService {
     this.email.send({
       to: `"${emailDetails.user.name}" <${email}>`,
       template: 'auth/password-reset',
-      data: {
+      passwordResetData: {
         name: emailDetails.user.name,
         minutes: 30,
         link: `${
@@ -451,7 +451,7 @@ export class AuthService {
     this.email.send({
       to: `"${user.name}" <${user.prefersEmail.email}>`,
       template: 'users/password-changed',
-      data: {
+      passwordChangedNotificationData: {
         name: user.name,
       },
     });
@@ -493,7 +493,7 @@ export class AuthService {
       this.email.send({
         to: `"${result.user.name}" <${result.email}>`,
         template: 'groups/invitation',
-        data: {
+        groupInvitationData: {
           name: result.user.name,
           group: group.name,
           link:
@@ -507,6 +507,36 @@ export class AuthService {
 
   getOneTimePassword(secret: string): string {
     return this.authenticator.generate(secret);
+  }
+
+  public async thirdPartyLogin(
+    ipAddress: string,
+    userAgent: string,
+    user: {firstName: string, lastName:string, email: string}
+  ):Promise<TokenResponse>{
+    const emailSafe = safeEmail(user.email);
+    var dbUser = await this.prisma.user.findFirst({
+      where: { emails: { some: { emailSafe } } },
+      include: {
+        emails: true,
+        prefersEmail: true,
+      },
+    });
+    if (!dbUser) {
+      const userData: RegisterDto = {
+        name: user.firstName + " " + user.lastName,
+        email: user.email
+      }
+      const newUser: Expose<User> = await this.register(ipAddress, userData)
+      dbUser = await this.prisma.user.findFirst({
+        where: { id: newUser.id },
+        include: {
+          emails: true,
+          prefersEmail: true,
+        },
+      });
+    };
+    return this.loginResponse(ipAddress, userAgent, dbUser);
   }
 
   private async loginUserWithTotpCode(
@@ -552,7 +582,7 @@ export class AuthService {
             this.email.send({
               to: `"${user.name}" <${user.prefersEmail.email}>`,
               template: 'auth/used-backup-code',
-              data: {
+              userBackUpCodeAlertData: {
                 name: user.name,
                 locationName,
                 link:
@@ -567,17 +597,6 @@ export class AuthService {
     return this.loginResponse(ipAddress, userAgent, user);
   }
 
-  googleLogin(req) {
-    if (!req.user) {
-      return 'No user from google';
-    }
-
-    return {
-      message: 'User information from google',
-      user: req.user
-    }
-  }
-  
   private async getAccessToken(user: User, sessionId: number): Promise<string> {
     const scopes = await this.getUserScopes(user);
     const payload: AccessTokenClaims = {
@@ -646,7 +665,7 @@ export class AuthService {
       this.email.send({
         to: `"${user.name}" <${user.prefersEmail.email}>`,
         template: 'auth/login-link',
-        data: {
+        mFAEmailResponseData: {
           name: user.name,
           minutes: parseInt(
           this.configService.get<string>('security.mfaTokenExpiry') ?? '',
@@ -714,7 +733,7 @@ export class AuthService {
         this.email.send({
           to: `"${user.name}" <${user.prefersEmail.email}>`,
           template: 'auth/approve-subnet',
-          data: {
+          checkLoginSubnetData: {
             name: user.name,
             locationName,
             minutes: 30,

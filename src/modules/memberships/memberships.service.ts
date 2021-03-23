@@ -219,7 +219,7 @@ export class MembershipsService {
     this.email.send({
       to: `"${user.name}" <${data.email}>`,
       template: 'groups/invitation',
-      data: {
+      groupInvitationData: {
         name: user.name,
         group: result.group.name,
         link: `${this.configService.get<string>(
