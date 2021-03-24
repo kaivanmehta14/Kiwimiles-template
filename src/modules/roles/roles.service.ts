@@ -5,7 +5,7 @@ import {
     InternalServerErrorException,
     NotFoundException,
   } from '@nestjs/common';
-  import type { Prisma, RolesOnGroups, ScopesOnRoles, UserRole } from '@prisma/client';
+  import type { Prisma, GroupRoles, RoleScopes, UserRole } from '@prisma/client';
   import { Role, Group, Scope } from '@prisma/client';
 import { String } from 'aws-sdk/clients/appstream';
 import { Number } from 'aws-sdk/clients/iot';
@@ -84,7 +84,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
         throw new BadRequestException("Role not available")
       }
 
-      const scopes: Scope[] = (await this.prisma.scopesOnRoles.findMany({
+      const scopes: Scope[] = (await this.prisma.roleScopes.findMany({
         include:{
           scope: true
         },
@@ -110,7 +110,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
         }))
         .map(object => object.group.id);
     
-        const roles: {id: number, name: string}[] = (await this.prisma.rolesOnGroups.findMany({
+        const roles: {id: number, name: string}[] = (await this.prisma.groupRoles.findMany({
           select: {
             role: {
               select:{
@@ -135,7 +135,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
     public async getGroupRoles(id: number): Promise<{id: number, name: string}[]> {
       
       try{
-        const roles: {id: number, name: string}[] = (await this.prisma.rolesOnGroups.findMany({
+        const roles: {id: number, name: string}[] = (await this.prisma.groupRoles.findMany({
           select: {
             role: {
               select:{
@@ -158,7 +158,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
     public async addGroupRole(
       id: number,
       data: RoleDto
-    ): Promise<Expose<RolesOnGroups>> {
+    ): Promise<Expose<GroupRoles>> {
       
       const group: Group = await this.prisma.group.findUnique({
         where: {
@@ -183,7 +183,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
         throw new BadRequestException("Role not found");
       }
       
-      const result = await this.prisma.rolesOnGroups.findFirst({
+      const result = await this.prisma.groupRoles.findFirst({
         where:{
           roleId: role.id,
           groupId: group.id
@@ -191,7 +191,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
       })
 
       if(!result) {
-        return await this.prisma.rolesOnGroups.create({
+        return await this.prisma.groupRoles.create({
           data:{
             role: { connect: { id: role.id } },
             group: { connect: { id: group.id } },
@@ -207,7 +207,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
     public async updateRoleScopes(
       id: number,
       data: RoleDto[]
-    ): Promise<ScopesOnRoles[]> {
+    ): Promise<RoleScopes[]> {
       const role: Role = await this.prisma.role.findUnique({
         where: {
           id: id
@@ -218,7 +218,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
         throw new BadRequestException("Group not found");
       }
 
-      await this.prisma.scopesOnRoles.deleteMany({
+      await this.prisma.roleScopes.deleteMany({
         where: {
           roleId: id
         }
@@ -232,10 +232,10 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
           }
         }
       });
-      const createPromises: Promise<ScopesOnRoles>[] = [];
+      const createPromises: Promise<RoleScopes>[] = [];
       scopes.forEach(async scope => {      
         createPromises.push(
-           this.prisma.scopesOnRoles.create({
+           this.prisma.roleScopes.create({
           data: {
             scope: { connect: { id : scope.id } },
             role: { connect: { id: role.id } }
@@ -248,7 +248,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
     public async updateGroupRoles(
       id: number,
       data: RoleDto[]
-    ): Promise<RolesOnGroups[]> {
+    ): Promise<GroupRoles[]> {
       const group: Group = await this.prisma.group.findUnique({
         where: {
           id: id
@@ -259,7 +259,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
         throw new BadRequestException("Group not found");
       }
 
-      await this.prisma.rolesOnGroups.deleteMany({
+      await this.prisma.groupRoles.deleteMany({
         where: {
           groupId: id
         }
@@ -273,10 +273,10 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
           }
         }
       });
-      const createPromises: Promise<RolesOnGroups>[] = [];
+      const createPromises: Promise<GroupRoles>[] = [];
       roles.forEach(async role => {      
         createPromises.push(
-          this.prisma.rolesOnGroups.create({
+          this.prisma.groupRoles.create({
             data: {
               group: { connect: { id : group.id } },
               role: { connect: { id: role.id } }
@@ -305,7 +305,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
         throw new BadRequestException(data.name + " is not available");
       }
 
-      const rolesOnGroups: Prisma.BatchPayload = await this.prisma.rolesOnGroups.deleteMany({ 
+      const rolesOnGroups: Prisma.BatchPayload = await this.prisma.groupRoles.deleteMany({ 
         where:
           {
             groupId: groupId,
@@ -318,12 +318,12 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
     public async deleteRole(id: number): Promise<Role> {
       
       try {
-        await this.prisma.rolesOnGroups.deleteMany({
+        await this.prisma.groupRoles.deleteMany({
           where:{
             roleId: id
           }
         })
-        await this.prisma.scopesOnRoles.deleteMany({
+        await this.prisma.roleScopes.deleteMany({
           where:{
             roleId: id
           }

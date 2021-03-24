@@ -971,7 +971,7 @@ export class AuthService {
     }))
     .map(object => object.group.id);
 
-    const roleIds: number[] = (await this.prisma.rolesOnGroups.findMany({
+    const roleIds: number[] = (await this.prisma.groupRoles.findMany({
       select: {
         role: {
           select:{
@@ -987,7 +987,7 @@ export class AuthService {
     }))
     .map(object => object.role.id);
 
-    const scopes: {name:string, privileges:string}[] = (await this.prisma.scopesOnRoles.findMany({
+    const scopes: {name:string, privileges:string}[] = (await this.prisma.roleScopes.findMany({
       select: {
         scope: {
           select:{

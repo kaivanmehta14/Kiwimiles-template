@@ -229,7 +229,7 @@ export class UsersService {
       where: { userId: userId }
     })).map(result => result.groupId);
 
-    const roleIds: number[] = (await this.prisma.rolesOnGroups.findMany({
+    const roleIds: number[] = (await this.prisma.groupRoles.findMany({
       select: {roleId: true},
       where: { 
         groupId: {
@@ -238,7 +238,7 @@ export class UsersService {
       }
     })).map(result => result.roleId);
 
-    const scopes: string[] = (await this.prisma.scopesOnRoles.findMany({
+    const scopes: string[] = (await this.prisma.roleScopes.findMany({
       select: {scope: true},
       where: { 
         roleId: {

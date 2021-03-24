@@ -78,7 +78,7 @@ model Scope {
   privileges        String?
 }
 
-model RolesOnGroups {
+model GroupRoles {
   role        Role     @relation(fields: [roleId], references: [id])
   roleId      Int     
   group       Group    @relation(fields: [groupId], references: [id])
@@ -86,7 +86,7 @@ model RolesOnGroups {
   @@id([roleId, groupId])
 }
 
-model ScopesOnRoles {
+model RoleScopes {
   scope       Scope    @relation(fields: [scopeId], references: [id])
   scopeId     Int  
   role        Role     @relation(fields: [roleId], references: [id])

@@ -65,7 +65,17 @@ export class MailService {
     if (options.template) {
       const layout = await this.readTemplate('layout.html');
       let template = await this.readTemplate(options.template);
-      let [markdown, html] = render(template, options.data);
+      var retrievedData;
+      const dataKeys: string[] = 
+      ['data', 'emailVerificationData', 'passwordResetData', 'passwordChangedNotificationData',
+        'groupInvitationData', 'userBackUpCodeAlertData', 'mFAEmailResponseData', 
+        'checkLoginSubnetData', 'deactivatedNotificationData', 'mergeRequestData']
+
+      for (var key in options) {
+        if(!(dataKeys.indexOf(key) > -1)) continue;
+        if(options[key] !== null) retrievedData = options[key];
+      }
+      let [markdown, html] = render(template, retrievedData);
       if (markdown.startsWith('#')) {
         const subject = markdown.split('\n', 1)[0].replace('#', '').trim();
         if (subject) {
