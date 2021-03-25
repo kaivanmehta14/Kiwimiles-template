@@ -6,6 +6,12 @@ import {
   HttpStatus,
   Ip,
   Post,
+  Get,
+  UseGuards,
+  Req,
+  Res,
+  InternalServerErrorException,
+  NotFoundException
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { Expose } from '../../providers/prisma/prisma.interface';
@@ -22,20 +28,96 @@ import { TokenResponse, TotpTokenResponse } from './auth.interface';
 import { AuthService } from './auth.service';
 import { Public } from './public.decorator';
 import { RateLimit } from './rate-limit.decorator';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 @Public()
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  /** login with google */
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  googleAuth() {}
+
+  /** redirect from google */
+  @Get('google/redirect')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(
+    @Req() req, 
+    @Res() res,
+    @Ip() ip: string,
+    @Headers('User-Agent') userAgent: string
+  ) {
+    if(!req.user) {
+      throw new NotFoundException(`user not found`);
+    }
+    try {
+      const tokenResponse: 
+      {
+       accessToken: string,
+       refreshToken:string
+      } = await this.authService.thirdPartyLogin(ip, userAgent, req.user);
+      const accessToken:string = tokenResponse.accessToken;
+      const refreshToken:string = tokenResponse.refreshToken;
+      if(accessToken) {
+        res.redirect(`http://localhost:4200/auth/link/login/success?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+      }
+      else {
+        res.redirect('http://localhost:4200/auth/link/login/');
+      }
+    }
+    catch(error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  /** login with facebook */
+  @Get('facebook')
+  @UseGuards(AuthGuard('facebook'))
+  async facebookAuth() {}
+
+  /** redirect from facebook */
+  @Get('facebook/redirect')
+  @UseGuards(AuthGuard('facebook'))
+  async facebookAuthRedirect(
+    @Req() req, 
+    @Res() res,
+    @Ip() ip: string,
+    @Headers('User-Agent') userAgent: string
+  ) {
+    if(!req.user.user) {
+      throw new NotFoundException(`user not found`);
+    }
+    try {
+      const tokenResponse: 
+      {
+      accessToken: string,
+      refreshToken:string
+      } = await this.authService.thirdPartyLogin(ip, userAgent, req.user.user);
+      const accessToken:string = tokenResponse.accessToken;
+      const refreshToken:string = tokenResponse.refreshToken;
+      if(accessToken) {
+        res.redirect(`http://localhost:4200/auth/link/login/success?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+      }
+      else {
+        res.redirect('http://localhost:4200/auth/link/login/');
+      }
+    }
+    catch(error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
   /** Login to an account */
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @RateLimit(10)
   async login(
     @Body() data: LoginDto,
     @Ip() ip: string,
     @Headers('User-Agent') userAgent: string,
-    @Body('origin') origin?: string,
+    @Headers('Origin') origin?: string,
   ): Promise<TokenResponse | TotpTokenResponse> {
     return this.authService.login(
       ip,
@@ -46,7 +128,7 @@ export class AuthController {
       origin,
     );
   }
-
+  
   /** Create a new account */
   @Post('register')
   @HttpCode(HttpStatus.CREATED)

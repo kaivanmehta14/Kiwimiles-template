@@ -26,6 +26,7 @@ import { TokensService } from '../../providers/tokens/tokens.service';
 import { ApiKeysService } from '../api-keys/api-keys.service';
 import { AuthService } from '../auth/auth.service';
 import { PasswordUpdateInput } from './users.interface';
+import {CommonService} from '../../helpers/common-functions';
 
 @Injectable()
 export class UsersService {
@@ -96,7 +97,7 @@ export class UsersService {
       this.email.send({
         to: `"${user.name}" <${user.prefersEmail.email}>`,
         template: 'users/password-changed',
-        data: {
+        passwordChangedNotificationData: {
           name: user.name,
         },
       });
@@ -134,7 +135,7 @@ export class UsersService {
       this.email.send({
         to: `"${user.name}" <${user.prefersEmail.email}>`,
         template: 'users/deactivated',
-        data: {
+        deactivatedNotificationData: {
           name: user.name,
         },
       });
@@ -170,7 +171,7 @@ export class UsersService {
     this.email.send({
       to: `"${user.name}" <${user.prefersEmail.email}>`,
       template: 'users/merge-request',
-      data: {
+      mergeRequestData: {
         name: user.name,
         minutes,
         link: `${this.configService.get<string>(
@@ -211,5 +212,41 @@ export class UsersService {
         ),
       },
     });
+  }
+
+  async getUserPrivilege(userId:number): Promise<string[]>{
+    const userRole: string = (await this.prisma.user.findUnique({
+      select: {
+        role: true
+      },
+      where: {
+        id: userId
+      }
+    })).role;
+    if(userRole == "SUDO") return ["*"];
+    const groupIds: number[] = (await this.prisma.membership.findMany({
+      select: {groupId: true},
+      where: { userId: userId }
+    })).map(result => result.groupId);
+
+    const roleIds: number[] = (await this.prisma.groupRoles.findMany({
+      select: {roleId: true},
+      where: { 
+        groupId: {
+          in: groupIds
+        } 
+      }
+    })).map(result => result.roleId);
+
+    const scopes: string[] = (await this.prisma.roleScopes.findMany({
+      select: {scope: true},
+      where: { 
+        roleId: {
+          in: roleIds
+        } 
+      }
+    })).map(result => result.scope.name);
+
+    return scopes;
   }
 }

@@ -114,6 +114,7 @@ export class GroupsService {
     });
     if (!testGroup) throw new NotFoundException(GROUP_NOT_FOUND);
     await this.prisma.membership.deleteMany({ where: { group: { id } } });
+    await this.prisma.groupRoles.deleteMany({ where: { group: { id } } });
     const group = await this.prisma.group.delete({
       where: { id },
     });

@@ -44,6 +44,7 @@ export class RegisterDto {
   notificationEmails?: 'ACCOUNT' | 'UPDATES' | 'PROMOTIONS';
 
   @IsString()
+  @MinLength(8)
   @IsOptional()
   password?: string | null;
 

@@ -2,14 +2,14 @@ generator client {
   provider = "prisma-client-js"
 }
 
-datasource mysql {
-  provider = "mysql"
+datasource postgresql {
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  checkLocationOnLogin Boolean              @default(false)
-  countryCode          String               @default("us")
+  checkLocationOnLogin Boolean              @default(true)
+  countryCode          String               @default("nz")
   createdAt            DateTime             @default(now())
   gender               Gender               @default(UNKNOWN)
   id                   Int                  @id
@@ -22,7 +22,7 @@ model User {
   prefersEmailId       Int?
   profilePictureUrl    String               @default("https://unavatar.now.sh/fallback.png")
   role                 UserRole             @default(USER)
-  timezone             String               @default("America/Los_Angeles")
+  timezone             String               @default("Pacific/Auckland")
   twoFactorMethod      MfaMethod            @default(NONE)
   twoFactorPhone       String?
   twoFactorSecret      String?
@@ -39,7 +39,7 @@ model User {
   memberships          Membership[]         @relation("userMembership")
   sessions             Session[]            @relation("userSession")
 
-  @@index([prefersEmailId], name: "prefersEmailId")
+  @@index([prefersEmailId], name: "index_user_prefersEmailId")
 }
 
 model Group {
@@ -62,7 +62,36 @@ model Group {
   memberships       Membership[] @relation("groupMembership")
   webhooks          Webhook[]    @relation("groupWebhook")
 
-  @@index([parentId], name: "parentId")
+  @@index([parentId], name: "index_group_parentId")
+}
+
+model Role {
+  id                Int          @id @default(autoincrement())
+  createdAt         DateTime     @default(now())
+  name              String
+}
+
+model Scope {
+  id                Int          @id @default(autoincrement())
+  createdAt         DateTime     @default(now())
+  name              String
+  privileges        String?
+}
+
+model GroupRoles {
+  role        Role     @relation(fields: [roleId], references: [id])
+  roleId      Int     
+  group       Group    @relation(fields: [groupId], references: [id])
+  groupId     Int     
+  @@id([roleId, groupId])
+}
+
+model RoleScopes {
+  scope       Scope    @relation(fields: [scopeId], references: [id])
+  scopeId     Int  
+  role        Role     @relation(fields: [roleId], references: [id])
+  roleId      Int     
+  @@id([scopeId, roleId])
 }
 
 model Email {
@@ -76,7 +105,7 @@ model Email {
   user       User     @relation("userEmail", fields: [userId], references: [id])
   users      User[]   @relation("userPrefersEmail")
 
-  @@index([userId], name: "userId")
+  @@index([userId], name: "index_email_userId")
 }
 
 model ApiKey {
@@ -94,9 +123,9 @@ model ApiKey {
   auditLogs            AuditLog[] @relation("apiKeyAuditLog")
   group                Group?     @relation("groupApiKey", fields: [groupId], references: [id])
   user                 User?      @relation("userApiKey", fields: [userId], references: [id])
-
-  @@index([groupId], name: "groupId")
-  @@index([userId], name: "userId")
+  
+  @@index([groupId], name: "index_apiKey_groupId")
+  @@index([userId], name: "index_apiKey_userId")
 }
 
 model ApprovedSubnet {
@@ -110,8 +139,8 @@ model ApprovedSubnet {
   updatedAt   DateTime @updatedAt
   userId      Int
   user        User     @relation("userApprovedSubnet", fields: [userId], references: [id])
-
-  @@index([userId], name: "userId")
+  
+  @@index([userId], name: "index_approvedSubnet_userId")
 }
 
 model BackupCode {
@@ -123,7 +152,7 @@ model BackupCode {
   userId    Int
   user      User     @relation("userBackupCode", fields: [userId], references: [id])
 
-  @@index([userId], name: "userId")
+  @@index([userId], name: "index_backupCode_userId")
 }
 
 model CouponCode {
@@ -150,7 +179,7 @@ model Domain {
   verificationCode String
   group            Group    @relation("groupDomain", fields: [groupId], references: [id])
 
-  @@index([groupId], name: "groupId")
+  @@index([groupId], name: "index_domain_groupId")
 }
 
 model Identity {
@@ -162,7 +191,7 @@ model Identity {
   userId    Int
   user      User         @relation("userIdentity", fields: [userId], references: [id])
 
-  @@index([userId], name: "userId")
+  @@index([userId], name: "index_identity_userId")
 }
 
 model Membership {
@@ -175,8 +204,8 @@ model Membership {
   group     Group          @relation("groupMembership", fields: [groupId], references: [id])
   user      User           @relation("userMembership", fields: [userId], references: [id])
 
-  @@index([groupId], name: "groupId")
-  @@index([userId], name: "userId")
+  @@index([groupId], name: "index_membership_groupId")
+  @@index([userId], name: "index_membership_userId")
 }
 
 model Session {
@@ -195,7 +224,7 @@ model Session {
   userId          Int
   user            User     @relation("userSession", fields: [userId], references: [id])
 
-  @@index([userId], name: "userId")
+  @@index([userId], name: "index_session_userId")
 }
 
 model Webhook {
@@ -211,7 +240,7 @@ model Webhook {
   url         String
   group       Group     @relation("groupWebhook", fields: [groupId], references: [id])
 
-  @@index([groupId], name: "groupId")
+  @@index([groupId], name: "index_webhook_groupId")
 }
 
 model AuditLog {
@@ -235,9 +264,9 @@ model AuditLog {
   user            User?    @relation("userAuditLog", fields: [userId], references: [id])
   apiKey          ApiKey?  @relation("apiKeyAuditLog", fields: [apiKeyId], references: [id])
 
-  @@index([apiKeyId], name: "apiKeyId")
-  @@index([groupId], name: "groupId")
-  @@index([userId], name: "userId")
+  @@index([apiKeyId], name: "index_auditLog_apiKeyId")
+  @@index([groupId], name: "index_auditLog_groupId")
+  @@index([userId], name: "index_auditLog_userId")
 }
 
 enum Gender {

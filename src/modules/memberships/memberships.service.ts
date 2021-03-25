@@ -143,7 +143,7 @@ export class MembershipsService {
       ).filter((i) => i.id !== id);
       if (!otherOwners.length)
         throw new BadRequestException(CANNOT_UPDATE_ROLE_SOLE_OWNER);
-    }
+      }
     const membership = await this.prisma.membership.update({
       where: { id },
       data,
@@ -186,10 +186,28 @@ export class MembershipsService {
       where: { emails: { some: { emailSafe } } },
     });
     let user: Expose<User> | null = userResult
-      ? this.prisma.expose<User>(userResult)
-      : null;
+      ? this.prisma.expose<User>(userResult) : null;
     if (!user)
-      user = await this.auth.register(ipAddress, { name: data.email, ...data });
+      throw new NotFoundException("user not found")
+      //user = await this.auth.register(ipAddress, { name: data.email, ...data });
+
+    const membershipResult = await this.prisma.membership.findFirst({
+      where: {
+        user: { id: user.id },
+        group: { id: groupId}
+      },
+    });
+    let membership: Expose<Membership> | null = membershipResult
+      ? this.prisma.expose<Membership>(membershipResult) : null
+
+    if (membership) {
+      const result = await this.prisma.membership.update({
+        where: { id: membership.id },
+        data: { role: data.role }
+      });
+      return this.prisma.expose<Membership>(result);
+    }
+
     const result = await this.prisma.membership.create({
       data: {
         role: data.role,
@@ -201,7 +219,7 @@ export class MembershipsService {
     this.email.send({
       to: `"${user.name}" <${data.email}>`,
       template: 'groups/invitation',
-      data: {
+      groupInvitationData: {
         name: user.name,
         group: result.group.name,
         link: `${this.configService.get<string>(

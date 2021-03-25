@@ -58,8 +58,8 @@ export class MultiFactorAuthenticationService {
     });
     return this.twilioService.send({
       to: phone,
-      body: `${this.auth.getOneTimePassword(secret)} is your ${
-        this.configService.get<string>('meta.appName') ?? ''
+      from: process.env.TWILIO_PHONE_NUMBER,
+      body: `${this.auth.getOneTimePassword(secret)} is your ${this.configService.get<string>('meta.appName') ?? ''
       } verification code.`,
     });
   }

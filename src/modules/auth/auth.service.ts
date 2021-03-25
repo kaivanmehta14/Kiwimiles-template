@@ -68,6 +68,7 @@ import {
   userScopes,
 } from '../../helpers/scopes';
 import axios from 'axios';
+import { CommonService } from 'src/helpers/common-functions';
 
 @Injectable()
 export class AuthService {
@@ -211,7 +212,7 @@ export class AuthService {
           );
           if (img.body.byteLength > 1)
             data.profilePictureUrl = `https://www.gravatar.com/avatar/${md5Email}?d=mp`;
-        } catch (error) {}
+        } catch (error) { }
       }
     }
 
@@ -265,11 +266,11 @@ export class AuthService {
       template: resend
         ? 'auth/resend-email-verification'
         : 'auth/email-verification',
-      data: {
+      emailVerificationData: {
         name: emailDetails.user.name,
         days: 7,
-        link: `${
-          origin ?? this.configService.get<string>('frontendUrl')
+        link:
+        `${origin ?? this.configService.get<string>('frontendUrl')
         }/auth/link/verify-email?token=${this.tokensService.signJwt(
           EMAIL_VERIFY_TOKEN,
           { id: emailDetails.id },
@@ -410,7 +411,7 @@ export class AuthService {
     this.email.send({
       to: `"${emailDetails.user.name}" <${email}>`,
       template: 'auth/password-reset',
-      data: {
+      passwordResetData: {
         name: emailDetails.user.name,
         minutes: 30,
         link: `${
@@ -450,7 +451,7 @@ export class AuthService {
     this.email.send({
       to: `"${user.name}" <${user.prefersEmail.email}>`,
       template: 'users/password-changed',
-      data: {
+      passwordChangedNotificationData: {
         name: user.name,
       },
     });
@@ -492,11 +493,11 @@ export class AuthService {
       this.email.send({
         to: `"${result.user.name}" <${result.email}>`,
         template: 'groups/invitation',
-        data: {
+        groupInvitationData: {
           name: result.user.name,
           group: group.name,
-          link: `${
-            origin ?? this.configService.get<string>('frontendUrl')
+          link:
+            `${origin ?? this.configService.get<string>('frontendUrl')
           }/groups/${group.id}`,
         },
       });
@@ -506,6 +507,36 @@ export class AuthService {
 
   getOneTimePassword(secret: string): string {
     return this.authenticator.generate(secret);
+  }
+
+  public async thirdPartyLogin(
+    ipAddress: string,
+    userAgent: string,
+    user: {firstName: string, lastName:string, email: string}
+  ):Promise<TokenResponse>{
+    const emailSafe = safeEmail(user.email);
+    var dbUser = await this.prisma.user.findFirst({
+      where: { emails: { some: { emailSafe } } },
+      include: {
+        emails: true,
+        prefersEmail: true,
+      },
+    });
+    if (!dbUser) {
+      const userData: RegisterDto = {
+        name: user.firstName + " " + user.lastName,
+        email: user.email
+      }
+      const newUser: Expose<User> = await this.register(ipAddress, userData)
+      dbUser = await this.prisma.user.findFirst({
+        where: { id: newUser.id },
+        include: {
+          emails: true,
+          prefersEmail: true,
+        },
+      });
+    };
+    return this.loginResponse(ipAddress, userAgent, dbUser);
   }
 
   private async loginUserWithTotpCode(
@@ -551,11 +582,11 @@ export class AuthService {
             this.email.send({
               to: `"${user.name}" <${user.prefersEmail.email}>`,
               template: 'auth/used-backup-code',
-              data: {
+              userBackUpCodeAlertData: {
                 name: user.name,
                 locationName,
-                link: `${
-                  origin ?? this.configService.get<string>('frontendUrl')
+                link:
+                    `${origin ?? this.configService.get<string>('frontendUrl')
                 }/users/${id}/sessions`,
               },
             });
@@ -567,7 +598,7 @@ export class AuthService {
   }
 
   private async getAccessToken(user: User, sessionId: number): Promise<string> {
-    const scopes = await this.getScopes(user);
+    const scopes = await this.getUserScopes(user);
     const payload: AccessTokenClaims = {
       id: user.id,
       sessionId,
@@ -599,8 +630,8 @@ export class AuthService {
         countryCode: location?.country?.iso_code,
         userAgent,
         browser:
-          `${ua.getBrowser().name ?? ''} ${
-            ua.getBrowser().version ?? ''
+          `${ua.getBrowser().name ?? ''} 
+             ${ua.getBrowser().version ?? ''
           }`.trim() || undefined,
         operatingSystem:
           `${ua.getOS().name ?? ''} ${ua.getOS().version ?? ''}`
@@ -634,18 +665,18 @@ export class AuthService {
       this.email.send({
         to: `"${user.name}" <${user.prefersEmail.email}>`,
         template: 'auth/login-link',
-        data: {
+        mFAEmailResponseData: {
           name: user.name,
           minutes: parseInt(
-            this.configService.get<string>('security.mfaTokenExpiry') ?? '',
+          this.configService.get<string>('security.mfaTokenExpiry') ?? '',
           ),
           link: `${this.configService.get<string>(
             'frontendUrl',
-          )}/auth/link/login%2Ftoken?token=${this.tokensService.signJwt(
+          )}/auth/link/login?2Ftoken=${this.tokensService.signJwt(
             EMAIL_MFA_TOKEN,
             { id: user.id },
             '30m',
-          )}`,
+            )}`,
         },
       });
     } else if (user.twoFactorMethod === 'SMS' || forceMethod === 'SMS') {
@@ -653,8 +684,8 @@ export class AuthService {
         throw new BadRequestException(MFA_PHONE_NOT_FOUND);
       this.twilioService.send({
         to: user.twoFactorPhone,
-        body: `${this.getOneTimePassword(user.twoFactorSecret)} is your ${
-          this.configService.get<string>('meta.appName') ?? ''
+        from: process.env.TWILIO_PHONE_NUMBER,
+        body: `${this.getOneTimePassword(user.twoFactorSecret)} is your ${this.configService.get<string>('meta.appName') ?? ''
         } verification code.`,
       });
     }
@@ -702,13 +733,13 @@ export class AuthService {
         this.email.send({
           to: `"${user.name}" <${user.prefersEmail.email}>`,
           template: 'auth/approve-subnet',
-          data: {
+          checkLoginSubnetData: {
             name: user.name,
             locationName,
             minutes: 30,
-            link: `${
-              origin ?? this.configService.get<string>('frontendUrl')
-            }/auth/link/approve-subnet?token=${this.tokensService.signJwt(
+            link:
+              `${origin ?? this.configService.get<string>('frontendUrl')
+              }/auth/link/approve-subnet?token=${this.tokensService.signJwt(
               APPROVE_SUBNET_TOKEN,
               { id },
               '30m',
@@ -738,7 +769,7 @@ export class AuthService {
     );
   }
 
-  /** Get logging in scopes for a user */
+  /** Get logging in scopes for a user (currenly it's obsolete)*/
   async getScopes(user: User): Promise<string[]> {
     // Superadmins can do anything
     if (user.role === 'SUDO') return ['*'];
@@ -763,19 +794,63 @@ export class AuthService {
         if (membership.role === 'OWNER')
           scopes.push(
             ...Object.keys(groupOwnerScopes).map((i) =>
-              i.replace('{groupId}', id.toString()),
+                i.replace('{groupId}', id.toString()),
             ),
           );
         if (membership.role === 'ADMIN')
           scopes.push(
             ...Object.keys(groupAdminScopes).map((i) =>
-              i.replace('{groupId}', id.toString()),
+                i.replace('{groupId}', id.toString()),
             ),
           );
         if (membership.role === 'MEMBER')
           scopes.push(
             ...Object.keys(groupMemberScopes).map((i) =>
-              i.replace('{groupId}', id.toString()),
+                i.replace('{groupId}', id.toString()),
+            ),
+          );
+      });
+    }
+    return scopes;
+  }
+
+  /** Get logging in scopes for a user (currently in use)*/
+  async getUserScopes(user: User): Promise<string[]> {
+    // Superadmins can do anything
+    if (user.role === 'SUDO') return ['*'];
+
+    // Add all scopes for user self
+    const scopes: string[] = (await this.getUserPrivileges(user.id))
+    .map((scope) => scope.name.replace('{userId}', user.id.toString()));
+    scopes.push(`user-${user.id.toString()}:generic`)
+    // Add scopes for groups user is part of
+    const memberships = await this.prisma.membership.findMany({
+      where: { user: { id: user.id } },
+      select: { id: true, role: true, group: { select: { id: true } } },
+    });
+    for await (const membership of memberships) {
+      scopes.push(`membership-${membership.id}:*`);
+      const ids = [
+        membership.group.id,
+        ...(await this.recursivelyGetSubgroupIds(membership.group.id)),
+      ];
+      ids.forEach((id) => {
+        if (membership.role === 'OWNER')
+          scopes.push(
+            ...Object.keys(groupOwnerScopes).map((i) =>
+                i.replace('{groupId}', id.toString()),
+            ),
+          );
+        if (membership.role === 'ADMIN')
+          scopes.push(
+            ...Object.keys(groupAdminScopes).map((i) =>
+                i.replace('{groupId}', id.toString()),
+            ),
+          );
+        if (membership.role === 'MEMBER')
+          scopes.push(
+            ...Object.keys(groupMemberScopes).map((i) =>
+                i.replace('{groupId}', id.toString()),
             ),
           );
       });
@@ -812,7 +887,7 @@ export class AuthService {
       }>(MERGE_ACCOUNTS_TOKEN, token);
       baseUserId = result.baseUserId;
       mergeUserId = result.mergeUserId;
-    } catch (error) {}
+    } catch (error) { }
     if (!baseUserId || !mergeUserId)
       throw new BadRequestException(USER_NOT_FOUND);
     return this.merge(baseUserId, mergeUserId);
@@ -821,7 +896,7 @@ export class AuthService {
   private async merge(
     baseUserId: number,
     mergeUserId: number,
-  ): Promise<{ success: true }> {
+    ): Promise<{ success: true }> {
     const baseUser = await this.prisma.user.findUnique({
       where: { id: baseUserId },
     });
@@ -849,7 +924,7 @@ export class AuthService {
       'twoFactorSecret',
       'attributes',
     ].forEach((key) => {
-      if (mergeUser[key] != null) combinedUser[key] = mergeUser[key];
+        if (mergeUser[key] != null) combinedUser[key] = mergeUser[key];
     });
     await this.prisma.user.update({
       where: { id: baseUserId },
@@ -880,5 +955,56 @@ export class AuthService {
 
     await this.prisma.user.delete({ where: { id: mergeUser.id } });
     return { success: true };
+  }
+
+  private async getUserPrivileges(id: number): Promise<{name:string, privileges:string}[]> {
+  
+    const groupIds: number[] = (await this.prisma.membership.findMany({
+      select: {
+        group: {
+          select: {
+            id: true
+          }
+        }
+      },
+      where: {userId: id}
+    }))
+    .map(object => object.group.id);
+
+    const roleIds: number[] = (await this.prisma.groupRoles.findMany({
+      select: {
+        role: {
+          select:{
+            id: true
+          }
+        }
+      },
+      where: {
+        groupId: {
+          in: groupIds
+        }
+      }
+    }))
+    .map(object => object.role.id);
+
+    const scopes: {name:string, privileges:string}[] = (await this.prisma.roleScopes.findMany({
+      select: {
+        scope: {
+          select:{
+            name: true,
+            privileges: true
+          }
+        }
+      },
+      where: {
+        roleId: {
+          in: roleIds
+        }
+      }
+    }))
+    .map(object => object.scope);
+
+    const uniqueScopes: {name:string, privileges:string}[] = CommonService.findUnique(scopes, "name");
+    return uniqueScopes;
   }
 }

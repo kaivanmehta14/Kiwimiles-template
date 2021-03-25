@@ -43,6 +43,8 @@ import { TasksModule } from './providers/tasks/tasks.module';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { MetaModule } from './modules/meta/meta.module';
+import { RolesModule } from './modules/roles/roles.module';
+import { ScopesModule } from './modules/scopes/scopes.module';
 
 @Module({
   imports: [
@@ -77,6 +79,8 @@ import { MetaModule } from './modules/meta/meta.module';
     PuppeteerModule,
     MetricsModule,
     MetaModule,
+    RolesModule, 
+    ScopesModule
   ],
   providers: [
     {
