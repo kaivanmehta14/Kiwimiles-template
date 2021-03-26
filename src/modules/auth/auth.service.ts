@@ -512,7 +512,7 @@ export class AuthService {
   public async thirdPartyLogin(
     ipAddress: string,
     userAgent: string,
-    user: {firstName: string, lastName:string, email: string}
+    user: {firstName: string, lastName:string, email: string, profilePicture: string}
   ):Promise<TokenResponse>{
     const emailSafe = safeEmail(user.email);
     var dbUser = await this.prisma.user.findFirst({
@@ -524,8 +524,9 @@ export class AuthService {
     });
     if (!dbUser) {
       const userData: RegisterDto = {
-        name: user.firstName + " " + user.lastName,
-        email: user.email
+        name: user.lastName? (user.firstName + " " + user.lastName) : (user.firstName),
+        email: user.email,
+        profilePictureUrl: user.profilePicture 
       }
       const newUser: Expose<User> = await this.register(ipAddress, userData)
       dbUser = await this.prisma.user.findFirst({
