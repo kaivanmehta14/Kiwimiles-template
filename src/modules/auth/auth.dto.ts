@@ -116,7 +116,6 @@ export class LoginDto {
   email!: string;
 
   @IsString()
-  @MinLength(8)
   @IsOptional()
   password?: string;
 
