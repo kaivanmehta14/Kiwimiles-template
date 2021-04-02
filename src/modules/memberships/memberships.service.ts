@@ -39,6 +39,7 @@ export class MembershipsService {
   async createUserMembership(
     userId: number,
     data: Omit<Prisma.GroupCreateInput, 'id'>,
+    parentId: number
   ) {
     let id: number | undefined = undefined;
     while (!id) {
@@ -51,7 +52,7 @@ export class MembershipsService {
     const created = await this.groupsService.createGroup(userId, {
       ...data,
       id,
-    });
+    }, parentId);
     return created.memberships[0];
   }
 

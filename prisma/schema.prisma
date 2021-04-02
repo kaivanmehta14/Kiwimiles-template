@@ -61,6 +61,7 @@ model Group {
   subgroups         Group[]      @relation("groupSubgroups")
   memberships       Membership[] @relation("groupMembership")
   webhooks          Webhook[]    @relation("groupWebhook")
+  isDefault         Boolean      @default(false)
 
   @@index([parentId], name: "index_group_parentId")
 }
@@ -69,6 +70,7 @@ model Role {
   id                Int          @id @default(autoincrement())
   createdAt         DateTime     @default(now())
   name              String
+  isDefault         Boolean      @default(false)
 }
 
 model Scope {

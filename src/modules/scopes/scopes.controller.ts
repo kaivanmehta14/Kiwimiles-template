@@ -11,7 +11,7 @@ import {
     Post,
     Query,
   } from '@nestjs/common';
-  import { Role } from '@prisma/client';
+  import { Scope } from '@prisma/client';
   import { CursorPipe } from '../../pipes/cursor.pipe';
   import { OptionalIntPipe } from '../../pipes/optional-int.pipe';
   import { OrderByPipe } from '../../pipes/order-by.pipe';
@@ -33,7 +33,7 @@ import {
       @Query('cursor', CursorPipe) cursor?: Record<string, number | string>,
       @Query('where', WherePipe) where?: Record<string, number | string>,
       @Query('orderBy', OrderByPipe) orderBy?: Record<string, 'asc' | 'desc'>,
-    ): Promise<Expose<Role>[]> {
+    ): Promise<Expose<Scope>[]> {
       return this.scopesService.getAllScopes({ skip, take, orderBy, cursor, where });
     }
   }

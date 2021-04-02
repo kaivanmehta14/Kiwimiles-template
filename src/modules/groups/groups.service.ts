@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import type { GroupRoles, Prisma } from '@prisma/client';
 import { Group } from '@prisma/client';
 import randomColor from 'randomcolor';
 import { GROUP_NOT_FOUND } from '../../errors/errors.constants';
@@ -13,6 +13,7 @@ export class GroupsService {
   async createGroup(
     userId: number,
     data: Omit<Omit<Prisma.GroupCreateInput, 'group'>, 'user'>,
+    parentId: number
   ) {
     let initials = data.name.trim().substr(0, 2).toUpperCase();
     if (data.name.includes(' '))
@@ -26,15 +27,32 @@ export class GroupsService {
       `https://ui-avatars.com/api/?name=${initials}&background=${randomColor({
         luminosity: 'light',
       }).replace('#', '')}&color=000000`;
-    return this.prisma.group.create({
-      include: { memberships: { include: { group: true } } },
-      data: {
-        ...data,
-        memberships: {
-          create: { role: 'OWNER', user: { connect: { id: userId } } },
+
+    if(parentId) {
+      const createdGroup = await this.prisma.group.create({
+        include: { memberships: { include: { group: true } } },
+        data: {
+          ...data,
+          parent: {connect: {id: parentId}},
+          memberships: {
+            create: { role: 'OWNER', user: { connect: { id: userId } } },
+          },
         },
-      },
-    });
+      });
+      await this.getParentRoles(createdGroup.id, createdGroup.parentId);
+      return createdGroup;
+    }
+    else {
+      return this.prisma.group.create({
+        include: { memberships: { include: { group: true } } },
+        data: {
+          ...data,
+          memberships: {
+            create: { role: 'OWNER', user: { connect: { id: userId } } },
+          },
+        },
+      });
+    }
   }
 
   async getGroups(params: {
@@ -52,6 +70,9 @@ export class GroupsService {
         cursor,
         where,
         orderBy,
+        include:{
+          parent: true
+        }
       });
       return groups.map((user) => this.prisma.expose<Group>(user));
     } catch (error) {
@@ -143,6 +164,27 @@ export class GroupsService {
       return groups.map((user) => this.prisma.expose<Group>(user));
     } catch (error) {
       return [];
+    }
+  }
+
+  private async getParentRoles(groupId: number, parentId: number): Promise<void> {
+
+    const parentRoleIds: number[] = (await this.prisma.groupRoles.findMany({
+      select: {
+        roleId: true
+      },
+      where: {
+        groupId: parentId
+      }
+    })).map(tuple => tuple.roleId);
+
+    for await(let roleId of parentRoleIds) {
+      await this.prisma.groupRoles.create({
+        data:{
+          group: { connect: { id : groupId} },
+          role: { connect: { id: roleId } }
+        }
+      })
     }
   }
 }

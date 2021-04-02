@@ -2,6 +2,7 @@ import {
   IsArray,
   IsBoolean,
   IsNotEmpty,
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
@@ -31,6 +32,10 @@ export class CreateGroupDto {
   @IsString()
   @IsOptional()
   profilePictureUrl?: string;
+
+  @IsNumber()
+  @IsOptional()
+  parentTeamId ?: number;
 }
 
 export class UpdateGroupDto {

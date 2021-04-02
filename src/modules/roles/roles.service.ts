@@ -154,6 +154,43 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
         return [];
       }
     }
+
+    public async getGroupRecursiveRoles(id: number): Promise<{id: number, name: string}[]> {
+      
+      const parentIds: number[] = [id];
+      var childId: number = id;
+      do{
+        var parentId: number = (await this.prisma.group.findFirst({
+          where: {id: childId}
+        })).parentId;
+        if(parentId){
+          parentIds.push(parentId);
+          childId = parentId;
+        }
+      } while(parentId);
+      console.log(parentIds);
+      try{
+        const roles: {id: number, name: string}[] = (await this.prisma.groupRoles.findMany({
+          select: {
+            role: {
+              select:{
+                id: true,
+                name: true
+              }
+            }
+          },
+          where: {
+            groupId: {
+              in: parentIds
+            }
+          }
+        })).map(object => object.role);
+        return roles;
+      }
+      catch (error){
+        return [];
+      }
+    }
   
     public async addGroupRole(
       id: number,
@@ -287,6 +324,80 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
       return await this.prisma.$transaction(createPromises);
     }
     
+    public async updateGroupRolesRecursively(
+      id: number,
+      data: RoleDto[]
+    ): Promise<GroupRoles[]> {
+      const group: Group = await this.prisma.group.findUnique({
+        where: {
+          id: id
+        }
+      });
+
+      if(!group) {
+        throw new BadRequestException("Group not found");
+      }
+
+      const childGroupIds: number[] = await this.findChildGroupsRecursively(id);
+      const familyGroupIds: number[] = childGroupIds.concat([id]);
+
+      const rolesToBeDeleted: number[] = (await this.prisma.groupRoles.findMany({
+        select: {
+          roleId: true
+        },
+        where: {
+          groupId: id
+        }
+      })).map(tuple => tuple.roleId);
+
+      await this.prisma.groupRoles.deleteMany({
+        where: {
+          groupId: {
+            in: familyGroupIds
+          },
+          roleId: {
+            in: rolesToBeDeleted
+          }
+        }
+      });
+
+      const roleNames: string[] = data.map((value) => value.name);
+      const roleIds: number[] = (await this.prisma.role.findMany({
+        where: {
+          name: {
+            in: roleNames
+          }
+        }
+      })).map(tuple => tuple.id);
+
+      const existingGroupRoles: number[][] = (await this.prisma.groupRoles
+          .findMany({
+            where:{
+              groupId: {in: familyGroupIds},
+              roleId: {in: roleIds}
+            }
+          })).map(tuple => [tuple.groupId, tuple.roleId]);
+      const existingGroupIds: number[] = existingGroupRoles.map(groupRolePair => groupRolePair[0]);
+      const existingRoleIds: number[] = existingGroupRoles.map(groupRolePair => groupRolePair[1]);
+
+      const createPromises: Promise<GroupRoles>[] = [];
+      roleIds.forEach(async roleId => {
+        familyGroupIds.forEach(async groupId => {
+          if(!(existingGroupIds.indexOf(groupId) > -1 && existingRoleIds.indexOf(roleId) > -1)) {
+            createPromises.push(
+              this.prisma.groupRoles.create({
+                data: {
+                  group: { connect: { id : groupId } },
+                  role: { connect: { id: roleId } }
+                }
+              })
+            )
+          }
+        })  
+      })
+      return await this.prisma.$transaction(createPromises);
+    }
+    
     public async deleteGroupRole(groupId: number,  data: RevokeGroupRoleDto): Promise<Prisma.BatchPayload> {
     
       const RoleId: Number = (await this.prisma.role.findFirst({
@@ -339,6 +450,21 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
         console.log(error);
         throw new InternalServerErrorException(error);
       }
+    }
+
+    private async findChildGroupsRecursively(groupId: number): Promise<number[]>{
+      const subgroups = await this.prisma.group.findMany({
+        where: { parent: { id: groupId } },
+        select: {
+          id: true
+        },
+      });
+      const ids = subgroups.map((i) => i.id);
+      for await (const group of subgroups) {
+        const recurisiveIds = await this.findChildGroupsRecursively(group.id);
+        ids.push(...recurisiveIds);
+      }
+      return ids;
     }
   }
   

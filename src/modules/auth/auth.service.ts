@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Prisma } from '@prisma/client';
-import { Email, MfaMethod, User } from '@prisma/client';
+import { Email, MfaMethod, User, Group } from '@prisma/client';
 import { compare, hash } from 'bcrypt';
 import { createHash } from 'crypto';
 import got from 'got/dist/source';
@@ -234,6 +234,7 @@ export class AuthService {
       },
       include: { emails: { select: { id: true } } },
     });
+    await this.giveDefaultPermissions(user.id);
     if (user.emails[0]?.id)
       await this.prisma.user.update({
         where: { id: user.id },
@@ -1007,5 +1008,19 @@ export class AuthService {
 
     const uniqueScopes: {name:string, privileges:string}[] = CommonService.findUnique(scopes, "name");
     return uniqueScopes;
+  }
+
+  private async giveDefaultPermissions(userId: number): Promise<void> {
+    const defaultGroup: Group = await this.prisma.group.findFirst({
+      where: { isDefault: true }
+    })
+    if (defaultGroup){
+      await this.prisma.membership.create({
+        data:{
+          group: {connect: {id: defaultGroup.id}},
+          user: {connect: {id: userId}}
+        }
+      })
+    }
   }
 }

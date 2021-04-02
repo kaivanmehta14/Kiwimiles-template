@@ -109,7 +109,7 @@ import {
       @Param('groupId', ParseIntPipe) id: number,
       @Body() data: RoleDto[],
     ): Promise<GroupRoles[]> {
-      return this.roleservice.updateGroupRoles(id, data);
+      return this.roleservice.updateGroupRolesRecursively(id, data);
     }
 
     /** delete role */

@@ -26,9 +26,10 @@ export class UserMembershipController {
   @Scopes('user-{userId}:write-membership-*')
   async create(
     @Param('userId', ParseIntPipe) userId: number,
-    @Body() data: CreateGroupDto,
+    @Body() _data: CreateGroupDto,
   ): Promise<Expose<Membership>> {
-    return this.membershipsService.createUserMembership(userId, data);
+    const {parentTeamId, ...data} = _data;
+    return this.membershipsService.createUserMembership(userId, data, parentTeamId);
   }
 
   /** Get memberships for a user */
