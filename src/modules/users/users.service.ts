@@ -54,7 +54,7 @@ export class UsersService {
     cursor?: Prisma.UserWhereUniqueInput;
     where?: Prisma.UserWhereInput;
     orderBy?: Prisma.UserOrderByInput;
-  }): Promise<Expose<User>[]> {
+  }): Promise<{users: Expose<User>[], length: number}> {
     const { skip, take, cursor, where, orderBy } = params;
     try {
       const users = await this.prisma.user.findMany({
@@ -64,9 +64,10 @@ export class UsersService {
         where,
         orderBy,
       });
-      return users.map((user) => this.prisma.expose<User>(user));
+      const totalUsers: number = await this.prisma.user.count(); 
+      return {users: users.map((user) => this.prisma.expose<User>(user)), length: totalUsers};
     } catch (error) {
-      return [];
+      return {users: [], length: 0};
     }
   }
 

@@ -34,7 +34,7 @@ export class GroupController {
     @Query('cursor', CursorPipe) cursor?: Record<string, number | string>,
     @Query('where', WherePipe) where?: Record<string, number | string>,
     @Query('orderBy', OrderByPipe) orderBy?: Record<string, 'asc' | 'desc'>,
-  ): Promise<Expose<Group>[]> {
+  ): Promise<{groups: Expose<Group>[], length: number}> {
     return this.groupsService.getGroups({
       skip,
       take,

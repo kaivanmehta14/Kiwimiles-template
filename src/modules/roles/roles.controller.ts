@@ -42,7 +42,7 @@ import {
       @Query('cursor', CursorPipe) cursor?: Record<string, number | string>,
       @Query('where', WherePipe) where?: Record<string, number | string>,
       @Query('orderBy', OrderByPipe) orderBy?: Record<string, 'asc' | 'desc'>,
-    ): Promise<Expose<Role>[]> {
+    ): Promise<{roles: Expose<Role>[], length: number}> {
       return this.roleservice.getRoles({ skip, take, orderBy, cursor, where });
     }
   
@@ -56,8 +56,11 @@ import {
     /** Get Scopes for roles */
     @Get(':roleId/scopes')
     @Scopes('user-{userId}:read-info')
-    async getRoleScopes(@Param('roleId', ParseIntPipe) id: number): Promise<Scope[]> {
-      return this.roleservice.getRoleScopes(id);
+    async getRoleScopes(
+      @Param('roleId', ParseIntPipe) id: number,
+      @Query('skip', OptionalIntPipe) skip?: number,
+      @Query('take', OptionalIntPipe) take?: number): Promise<{scopes: Scope[], length: number}> {
+      return this.roleservice.getRoleScopes(id, {skip, take});
     }
 
     /** Get user roles */
@@ -70,7 +73,11 @@ import {
     /** Get group roles */
     @Get('group/:groupId')
     @Scopes('user-{userId}:read-info')
-    async getGroupRoles(@Param('groupId', ParseIntPipe) id: number): Promise<{id: number, name: string}[]> {
+    async getGroupRoles(
+      @Param('groupId', ParseIntPipe) id: number,
+      @Query('skip', OptionalIntPipe) skip?: number,
+      @Query('take', OptionalIntPipe) take?: number): 
+      Promise<{roles: {id: number, name: string}[], length: number}> {
       return this.roleservice.getGroupRoles(id);
     }
   

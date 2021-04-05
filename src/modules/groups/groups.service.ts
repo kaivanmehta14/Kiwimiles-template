@@ -61,7 +61,7 @@ export class GroupsService {
     cursor?: Prisma.GroupWhereUniqueInput;
     where?: Prisma.GroupWhereInput;
     orderBy?: Prisma.GroupOrderByInput;
-  }): Promise<Expose<Group>[]> {
+  }): Promise<{groups: Expose<Group>[], length: number}> {
     const { skip, take, cursor, where, orderBy } = params;
     try {
       const groups = await this.prisma.group.findMany({
@@ -74,9 +74,10 @@ export class GroupsService {
           parent: true
         }
       });
-      return groups.map((user) => this.prisma.expose<Group>(user));
+      const totalGroups: number = await this.prisma.group.count();
+      return {groups: groups.map((user) => this.prisma.expose<Group>(user)), length: totalGroups};
     } catch (error) {
-      return [];
+      return {groups: [], length: 0};
     }
   }
 

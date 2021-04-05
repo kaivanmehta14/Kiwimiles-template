@@ -45,7 +45,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
       cursor?: Prisma.UserWhereUniqueInput;
       where?: Prisma.UserWhereInput;
       orderBy?: Prisma.UserOrderByInput;
-    }): Promise<Expose<Role>[]> {
+    }): Promise<{roles: Expose<Role>[], length: number}> {
       const { skip, take, cursor, where, orderBy } = params;
       try {
         const roles = await this.prisma.role.findMany({
@@ -55,9 +55,10 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
           where,
           orderBy,
         });
-        return roles.map((role) => this.prisma.expose<Role>(role));
+        const totalRoles: number = await this.prisma.role.count();
+        return {roles: roles.map((role) => this.prisma.expose<Role>(role)), length: totalRoles};
       } catch (error) {
-        return [];
+        return {roles: [],length: 0};
       }
     }
 
@@ -74,7 +75,11 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
       }
     }
 
-    public async getRoleScopes(roleId: number): Promise<Scope[]> {
+    public async getRoleScopes(roleId: number, params ?: {
+      skip: number,
+      take: number
+    }): Promise<{scopes: Scope[], length: number}> {
+      const { skip, take } = params;
       const role: Role = await this.prisma.role.findFirst({
         where:{
           id: roleId
@@ -85,6 +90,8 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
       }
 
       const scopes: Scope[] = (await this.prisma.roleScopes.findMany({
+        skip,
+        take,
         include:{
           scope: true
         },
@@ -92,7 +99,13 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
           roleId: role.id
         }
       })).map(data => data.scope);
-      return scopes;
+
+      const totalScopes: number = await this.prisma.roleScopes.count({
+        where: {
+          roleId: role.id
+        }
+      });
+      return {scopes: scopes, length: totalScopes};
     }
 
     public async getUserRoles(id: number): Promise<{id: number, name: string}[]> {
@@ -132,7 +145,7 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
       }
     }
   
-    public async getGroupRoles(id: number): Promise<{id: number, name: string}[]> {
+    public async getGroupRoles(id: number): Promise<{roles: {id: number, name: string}[], length: number}> {
       
       try{
         const roles: {id: number, name: string}[] = (await this.prisma.groupRoles.findMany({
@@ -148,10 +161,15 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
             groupId: id
           }
         })).map(object => object.role);
-        return roles;
+        const totalRoles: number = await this.prisma.groupRoles.count({
+          where: {
+            groupId: id
+          }
+        }) 
+        return {roles: roles, length: totalRoles};
       }
       catch (error){
-        return [];
+        return {roles: [], length: 0};
       }
     }
 

@@ -33,7 +33,7 @@ import {
       @Query('cursor', CursorPipe) cursor?: Record<string, number | string>,
       @Query('where', WherePipe) where?: Record<string, number | string>,
       @Query('orderBy', OrderByPipe) orderBy?: Record<string, 'asc' | 'desc'>,
-    ): Promise<Expose<Scope>[]> {
+    ): Promise<{scopes: Expose<Scope>[], length: number}> {
       return this.scopesService.getAllScopes({ skip, take, orderBy, cursor, where });
     }
   }

@@ -2,6 +2,7 @@ import {
     Injectable,
 } from '@nestjs/common';
 import { Prisma, Scope } from '@prisma/client';
+import { Expose } from 'src/providers/prisma/prisma.interface';
 import { PrismaService } from '../../providers/prisma/prisma.service';
 
 @Injectable()
@@ -16,7 +17,7 @@ export class ScopeService {
         cursor?: Prisma.UserWhereUniqueInput;
         where?: Prisma.UserWhereInput;
         orderBy?: Prisma.UserOrderByInput;
-      }): Promise<Scope[]> {
+      }): Promise<{scopes: Expose<Scope>[], length: number}> {
         const { skip, take, cursor, where, orderBy } = params;
         const scopes: Scope[] = await this.prisma.scope.findMany({
             skip,
@@ -25,6 +26,7 @@ export class ScopeService {
             where,
             orderBy,
           });
-        return scopes;
+        const totalScopes: number = await this.prisma.scope.count();
+        return {scopes: scopes, length: totalScopes};
     }
 }
