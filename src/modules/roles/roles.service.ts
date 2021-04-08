@@ -53,7 +53,9 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
           take,
           cursor,
           where,
-          orderBy,
+          orderBy:{
+            createdAt: 'desc'
+          },
         });
         const totalRoles: number = await this.prisma.role.count();
         return {roles: roles.map((role) => this.prisma.expose<Role>(role)), length: totalRoles};

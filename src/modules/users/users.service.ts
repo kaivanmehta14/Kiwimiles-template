@@ -54,17 +54,40 @@ export class UsersService {
     cursor?: Prisma.UserWhereUniqueInput;
     where?: Prisma.UserWhereInput;
     orderBy?: Prisma.UserOrderByInput;
+    startDate ?: string;
+    endDate ?: string;
   }): Promise<{users: Expose<User>[], length: number}> {
-    const { skip, take, cursor, where, orderBy } = params;
+    var { skip, take, cursor, where, orderBy, startDate, endDate} = params;
     try {
+      var dateRange: {start: string, end: string} = null;
+      if(startDate && endDate) dateRange = {start: startDate, end: endDate}
+      if(where) {
+        if(where.name) {
+          where.name['mode'] = 'insensitive'
+        }
+      }
+      else {
+        where = {}
+      }
+
+      if(dateRange) {
+        const creationDateRange: {gt: string, lt: string} = {
+          gt: dateRange.start,
+          lt: dateRange.end
+        }
+        where['createdAt'] = creationDateRange
+      }
+      
       const users = await this.prisma.user.findMany({
         skip,
         take,
         cursor,
         where,
-        orderBy,
+        orderBy: {
+          createdAt: 'desc'
+        },
       });
-      const totalUsers: number = await this.prisma.user.count(); 
+      const totalUsers: number = await this.prisma.user.count({where}); 
       return {users: users.map((user) => this.prisma.expose<User>(user)), length: totalUsers};
     } catch (error) {
       return {users: [], length: 0};

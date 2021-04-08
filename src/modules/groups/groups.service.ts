@@ -5,6 +5,7 @@ import randomColor from 'randomcolor';
 import { GROUP_NOT_FOUND } from '../../errors/errors.constants';
 import { Expose } from '../../providers/prisma/prisma.interface';
 import { PrismaService } from '../../providers/prisma/prisma.service';
+import {CommonService} from '../../helpers/common-functions'
 
 @Injectable()
 export class GroupsService {
@@ -61,23 +62,67 @@ export class GroupsService {
     cursor?: Prisma.GroupWhereUniqueInput;
     where?: Prisma.GroupWhereInput;
     orderBy?: Prisma.GroupOrderByInput;
+    startDate ?: string;
+    endDate ?: string;
   }): Promise<{groups: Expose<Group>[], length: number}> {
-    const { skip, take, cursor, where, orderBy } = params;
+    var { skip, take, cursor, where, orderBy, startDate, endDate } = params;
+    
     try {
+      var dateRange: {start: string, end: string} = null;
+      if(startDate && endDate) dateRange = {start: startDate, end: endDate}
+      if(where) {
+        if(where.name) {
+          where.name['mode'] = 'insensitive'
+        }
+      }
+      else {
+        where = {}
+      }
+
+      if(dateRange) {
+        const creationDateRange: {gt: string, lt: string} = {
+          gt: dateRange.start,
+          lt: dateRange.end
+        }
+        where['createdAt'] = creationDateRange
+      }
       const groups = await this.prisma.group.findMany({
         skip,
         take,
         cursor,
         where,
-        orderBy,
+        orderBy: {
+          createdAt: 'desc'
+        },
         include:{
           parent: true
         }
       });
-      const totalGroups: number = await this.prisma.group.count();
+      const totalGroups: number = await this.prisma.group.count({where});
       return {groups: groups.map((user) => this.prisma.expose<Group>(user)), length: totalGroups};
     } catch (error) {
       return {groups: [], length: 0};
+    }
+  }
+
+  async getParents(): Promise<{name: string, id: number}[]> {
+    try {
+      const groups: {name: string, id: number}[] = (await this.prisma.group.findMany({
+        select:{
+          parent: true
+        },
+        where:{
+          parent: {
+            isNot: null
+          }
+        }
+      })).map(tuple => {
+          return {name: tuple.parent.name, id: tuple.parent.id}
+        });
+      return CommonService.findUnique(groups, 'name');
+    } catch (error) {
+      console.log(error);
+      return [];
     }
   }
 

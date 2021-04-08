@@ -34,6 +34,8 @@ export class GroupController {
     @Query('cursor', CursorPipe) cursor?: Record<string, number | string>,
     @Query('where', WherePipe) where?: Record<string, number | string>,
     @Query('orderBy', OrderByPipe) orderBy?: Record<string, 'asc' | 'desc'>,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ): Promise<{groups: Expose<Group>[], length: number}> {
     return this.groupsService.getGroups({
       skip,
@@ -41,7 +43,16 @@ export class GroupController {
       orderBy,
       cursor,
       where,
+      startDate,
+      endDate
     });
+  }
+
+  /** Get parent details */
+  @Get('parents')
+  @Scopes('group-*:read-info')
+  async getParents(): Promise<{name: string, id: number}[]> {
+    return this.groupsService.getParents();
   }
 
   /** Get group details */
