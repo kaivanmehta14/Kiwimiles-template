@@ -188,7 +188,6 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
           childId = parentId;
         }
       } while(parentId);
-      console.log(parentIds);
       try{
         const roles: {id: number, name: string}[] = (await this.prisma.groupRoles.findMany({
           select: {
