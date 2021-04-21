@@ -95,22 +95,22 @@ export class MailService {
       ];
       options.attachments = [{
         filename: 'kiwimiles-logo.png',
-        path: __dirname + '/assets/kiwimiles-logo.png',
+        path: './assets/kiwimiles-logo.png',
         cid: 'logo@kiwimiles'
       },
       {
         filename: 'facebook.png',
-        path: __dirname + '/assets/facebook.png',
+        path: './assets/facebook.png',
         cid: 'logo@fb-km'
       },
       {
         filename: 'linkedin.png',
-        path: __dirname + '/assets/linkedin.png',
+        path: './assets/linkedin.png',
         cid: 'logo@in-km'
       },
       {
         filename: 'globe.png',
-        path: __dirname + '/assets/globe.png',
+        path: './assets/globe.png',
         cid: 'logo@globe-km'
       }]
     }
