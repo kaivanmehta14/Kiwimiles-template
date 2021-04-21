@@ -1,0 +1,13 @@
+model CouponCode {
+  id               Int       @id @default(autoincrement())
+  code             String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  expiresAt        DateTime?
+  maxUses          Int       @default(1000)
+  usedCount        Int       @default(0)
+  teamRestrictions String?
+  amount           Float     @default(0.00)
+  currency         String
+  description      String?
+}

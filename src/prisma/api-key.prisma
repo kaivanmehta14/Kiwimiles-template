@@ -1,0 +1,19 @@
+model ApiKey {
+  createdAt            DateTime   @default(now())
+  description          String?
+  id                   Int        @id @default(autoincrement())
+  ipRestrictions       Json?
+  apiKey               String     @unique
+  name                 String?
+  groupId              Int?
+  referrerRestrictions Json?
+  scopes               Json?
+  updatedAt            DateTime   @updatedAt
+  userId               Int?
+  auditLogs            AuditLog[] @relation("apiKeyAuditLog")
+  group                Group?     @relation("groupApiKey", fields: [groupId], references: [id])
+  user                 User?      @relation("userApiKey", fields: [userId], references: [id])
+  
+  @@index([groupId], name: "index_apiKey_groupId")
+  @@index([userId], name: "index_apiKey_userId")
+}

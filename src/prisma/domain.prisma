@@ -1,0 +1,12 @@
+model Domain {
+  createdAt        DateTime @default(now())
+  domain           String
+  id               Int      @id @default(autoincrement())
+  isVerified       Boolean  @default(false)
+  groupId          Int
+  updatedAt        DateTime @updatedAt
+  verificationCode String
+  group            Group    @relation("groupDomain", fields: [groupId], references: [id])
+
+  @@index([groupId], name: "index_domain_groupId")
+}

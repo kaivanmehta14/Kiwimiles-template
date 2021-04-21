@@ -1,0 +1,13 @@
+model Membership {
+  createdAt DateTime       @default(now())
+  id        Int            @id @default(autoincrement())
+  groupId   Int
+  role      MembershipRole @default(MEMBER)
+  updatedAt DateTime       @updatedAt
+  userId    Int
+  group     Group          @relation("groupMembership", fields: [groupId], references: [id])
+  user      User           @relation("userMembership", fields: [userId], references: [id])
+
+  @@index([groupId], name: "index_membership_groupId")
+  @@index([userId], name: "index_membership_userId")
+}

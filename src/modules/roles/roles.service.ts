@@ -46,16 +46,27 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
       where?: Prisma.UserWhereInput;
       orderBy?: Prisma.UserOrderByInput;
     }): Promise<{roles: Expose<Role>[], length: number}> {
-      const { skip, take, cursor, where, orderBy } = params;
+      var { skip, take, cursor, where, orderBy } = params;
+      if(where) {
+        if(where.name) {
+          where.name['mode'] = 'insensitive'
+        }
+      }
+      else {
+        where = {}
+      }
+      if(!orderBy){
+        orderBy = {
+          createdAt: 'desc'
+        }
+      }
       try {
         const roles = await this.prisma.role.findMany({
           skip,
           take,
           cursor,
           where,
-          orderBy:{
-            createdAt: 'desc'
-          },
+          orderBy,
         });
         const totalRoles: number = await this.prisma.role.count();
         return {roles: roles.map((role) => this.prisma.expose<Role>(role)), length: totalRoles};
@@ -288,17 +299,15 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
           }
         }
       });
-      const createPromises: Promise<RoleScopes>[] = [];
-      scopes.forEach(async scope => {      
-        createPromises.push(
-           this.prisma.roleScopes.create({
+      for await(let scope of scopes){
+        await this.prisma.roleScopes.create({
           data: {
             scope: { connect: { id : scope.id } },
             role: { connect: { id: role.id } }
           }
-        }))
-      })
-      return await this.prisma.$transaction(createPromises); 
+        })
+      }
+      return await this.prisma.roleScopes.findMany();
     }
   
     public async updateGroupRoles(
@@ -329,18 +338,15 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
           }
         }
       });
-      const createPromises: Promise<GroupRoles>[] = [];
-      roles.forEach(async role => {      
-        createPromises.push(
-          this.prisma.groupRoles.create({
-            data: {
-              group: { connect: { id : group.id } },
-              role: { connect: { id: role.id } }
-            }
-          })
-        )
-      })
-      return await this.prisma.$transaction(createPromises);
+      for await(let role of roles){
+        await this.prisma.groupRoles.create({
+          data: {
+            group: { connect: { id : group.id } },
+            role: { connect: { id: role.id } }
+          }
+        })
+      }
+      return await this.prisma.groupRoles.findMany();
     }
     
     public async updateGroupRolesRecursively(
@@ -399,22 +405,19 @@ import { RevokeGroupRoleDto, RoleDto } from './roles.dto';
       const existingGroupIds: number[] = existingGroupRoles.map(groupRolePair => groupRolePair[0]);
       const existingRoleIds: number[] = existingGroupRoles.map(groupRolePair => groupRolePair[1]);
 
-      const createPromises: Promise<GroupRoles>[] = [];
-      roleIds.forEach(async roleId => {
-        familyGroupIds.forEach(async groupId => {
+      for await(let roleId of roleIds) {
+        for await(let groupId of familyGroupIds) {
           if(!(existingGroupIds.indexOf(groupId) > -1 && existingRoleIds.indexOf(roleId) > -1)) {
-            createPromises.push(
-              this.prisma.groupRoles.create({
-                data: {
-                  group: { connect: { id : groupId } },
-                  role: { connect: { id: roleId } }
-                }
-              })
-            )
+            this.prisma.groupRoles.create({
+              data: {
+                group: { connect: { id : groupId } },
+                role: { connect: { id: roleId } }
+              }
+            })
           }
-        })  
-      })
-      return await this.prisma.$transaction(createPromises);
+        }
+      }
+      return await this.prisma.groupRoles.findMany();
     }
     
     public async deleteGroupRole(groupId: number,  data: RevokeGroupRoleDto): Promise<Prisma.BatchPayload> {

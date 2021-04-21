@@ -1,0 +1,7 @@
+model RoleScopes {
+  scope       Scope    @relation(fields: [scopeId], references: [id])
+  scopeId     Int  
+  role        Role     @relation(fields: [roleId], references: [id])
+  roleId      Int     
+  @@id([scopeId, roleId])
+}

@@ -1,0 +1,7 @@
+model GroupRoles {
+  role        Role     @relation(fields: [roleId], references: [id])
+  roleId      Int     
+  group       Group    @relation(fields: [groupId], references: [id])
+  groupId     Int     
+  @@id([roleId, groupId])
+}

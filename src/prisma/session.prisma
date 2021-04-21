@@ -1,0 +1,18 @@
+model Session {
+  createdAt       DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  ipAddress       String
+  token           String
+  updatedAt       DateTime @updatedAt
+  userAgent       String?
+  city            String?
+  region          String?
+  timezone        String?
+  countryCode     String?
+  browser         String?
+  operatingSystem String?
+  userId          Int
+  user            User     @relation("userSession", fields: [userId], references: [id])
+
+  @@index([userId], name: "index_session_userId")
+}

@@ -86,14 +86,17 @@ export class GroupsService {
         }
         where['createdAt'] = creationDateRange
       }
+      if(!orderBy){
+        orderBy = {
+          createdAt: 'desc'
+        }
+      }
       const groups = await this.prisma.group.findMany({
         skip,
         take,
         cursor,
         where,
-        orderBy: {
-          createdAt: 'desc'
-        },
+        orderBy,
         include:{
           parent: true
         }

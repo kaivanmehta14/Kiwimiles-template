@@ -1,0 +1,11 @@
+model BackupCode {
+  id        Int      @id @default(autoincrement())
+  code      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isUsed    Boolean  @default(false)
+  userId    Int
+  user      User     @relation("userBackupCode", fields: [userId], references: [id])
+
+  @@index([userId], name: "index_backupCode_userId")
+}

@@ -1,0 +1,13 @@
+model Email {
+  createdAt  DateTime @default(now())
+  email      String   @unique
+  emailSafe  String   @unique
+  id         Int      @id @default(autoincrement())
+  isVerified Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+  userId     Int
+  user       User     @relation("userEmail", fields: [userId], references: [id])
+  users      User[]   @relation("userPrefersEmail")
+
+  @@index([userId], name: "index_email_userId")
+}

@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource postgresql {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  NONBINARY
+  UNKNOWN
+}
+
+enum NotificationEmail {
+  ACCOUNT
+  UPDATES
+  PROMOTIONS
+}
+
+enum PrefersColorScheme {
+  NO_PREFERENCE
+  LIGHT
+  DARK
+}
+
+enum PrefersReducedMotion {
+  NO_PREFERENCE
+  REDUCE
+}
+
+enum UserRole {
+  SUDO
+  USER
+}
+
+enum MfaMethod {
+  NONE
+  SMS
+  TOTP
+  EMAIL
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum IdentityType {
+  GOOGLE
+  APPLE
+  SLACK
+}

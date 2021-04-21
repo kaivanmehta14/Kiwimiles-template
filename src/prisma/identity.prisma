@@ -1,0 +1,11 @@
+model Identity {
+  createdAt DateTime     @default(now())
+  id        Int          @id @default(autoincrement())
+  loginName String
+  type      IdentityType
+  updatedAt DateTime     @updatedAt
+  userId    Int
+  user      User         @relation("userIdentity", fields: [userId], references: [id])
+
+  @@index([userId], name: "index_identity_userId")
+}

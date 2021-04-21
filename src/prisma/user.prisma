@@ -1,0 +1,34 @@
+model User {
+  checkLocationOnLogin Boolean              @default(true)
+  countryCode          String               @default("nz")
+  createdAt            DateTime             @default(now())
+  gender               Gender               @default(UNKNOWN)
+  id                   Int                  @id
+  name                 String
+  notificationEmail    NotificationEmail    @default(ACCOUNT)
+  password             String?
+  prefersLanguage      String               @default("en-us")
+  prefersColorScheme   PrefersColorScheme   @default(NO_PREFERENCE)
+  prefersReducedMotion PrefersReducedMotion @default(NO_PREFERENCE)
+  prefersEmailId       Int?
+  profilePictureUrl    String               @default("https://unavatar.now.sh/fallback.png")
+  role                 UserRole             @default(USER)
+  timezone             String               @default("Pacific/Auckland")
+  twoFactorMethod      MfaMethod            @default(NONE)
+  twoFactorPhone       String?
+  twoFactorSecret      String?
+  attributes           Json?
+  updatedAt            DateTime             @updatedAt
+  active               Boolean              @default(true)
+  prefersEmail         Email?               @relation("userPrefersEmail", fields: [prefersEmailId], references: [id])
+  apiKeys              ApiKey[]             @relation("userApiKey")
+  approvedSubnets      ApprovedSubnet[]     @relation("userApprovedSubnet")
+  auditLogs            AuditLog[]           @relation("userAuditLog")
+  backupCodes          BackupCode[]         @relation("userBackupCode")
+  emails               Email[]              @relation("userEmail")
+  identities           Identity[]           @relation("userIdentity")
+  memberships          Membership[]         @relation("userMembership")
+  sessions             Session[]            @relation("userSession")
+
+  @@index([prefersEmailId], name: "index_user_prefersEmailId")
+}

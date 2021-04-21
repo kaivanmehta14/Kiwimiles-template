@@ -1,0 +1,15 @@
+model Webhook {
+  contentType String    @default("application/json")
+  createdAt   DateTime  @default(now())
+  event       String
+  id          Int       @id @default(autoincrement())
+  isActive    Boolean   @default(false)
+  lastFiredAt DateTime?
+  groupId     Int
+  secret      String?
+  updatedAt   DateTime  @updatedAt
+  url         String
+  group       Group     @relation("groupWebhook", fields: [groupId], references: [id])
+
+  @@index([groupId], name: "index_webhook_groupId")
+}

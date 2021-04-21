@@ -1,0 +1,23 @@
+model Group {
+  autoJoinDomain    Boolean      @default(false)
+  createdAt         DateTime     @default(now())
+  forceTwoFactor    Boolean      @default(false)
+  id                Int          @id
+  ipRestrictions    String?
+  name              String
+  onlyAllowDomain   Boolean      @default(false)
+  profilePictureUrl String       @default("https://unavatar.now.sh/fallback.png")
+  attributes        Json?
+  updatedAt         DateTime     @updatedAt
+  parentId          Int?
+  parent            Group?       @relation("groupSubgroups", fields: [parentId], references: [id])
+  apikeys           ApiKey[]     @relation("groupApiKey")
+  auditLogs         AuditLog[]   @relation("groupAuditLog")
+  domains           Domain[]     @relation("groupDomain")
+  subgroups         Group[]      @relation("groupSubgroups")
+  memberships       Membership[] @relation("groupMembership")
+  webhooks          Webhook[]    @relation("groupWebhook")
+  isDefault         Boolean      @default(false)
+
+  @@index([parentId], name: "index_group_parentId")
+}

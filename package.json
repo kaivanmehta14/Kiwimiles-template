@@ -9,6 +9,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
+    "generate:prisma":"npx prisma-merge && npx prisma format && npx prisma db push --preview-feature",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -21,6 +22,9 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand --testTimeout 30000",
     "test:unit": "jest --forceExit --testTimeout 30000",
     "test:e2e": "export TEST=true; npx ts-node tests/test-before.ts && jest --runInBand --config ./tests/jest-e2e.json --forceExit --testTimeout 30000"
+  },
+  "prisma": {
+    "schema": "./src/prisma/schema.prisma"
   },
   "dependencies": {
     "@elastic/elasticsearch": "^7.10.0",

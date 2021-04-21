@@ -77,15 +77,17 @@ export class UsersService {
         }
         where['createdAt'] = creationDateRange
       }
-      
+      if(!orderBy){
+        orderBy = {
+          createdAt: 'desc'
+        }
+      }
       const users = await this.prisma.user.findMany({
         skip,
         take,
         cursor,
         where,
-        orderBy: {
-          createdAt: 'desc'
-        },
+        orderBy
       });
       const totalUsers: number = await this.prisma.user.count({where}); 
       return {users: users.map((user) => this.prisma.expose<User>(user)), length: totalUsers};

@@ -1,0 +1,25 @@
+model AuditLog {
+  createdAt       DateTime @default(now())
+  event           String
+  rawEvent        String
+  id              Int      @id @default(autoincrement())
+  groupId         Int?
+  updatedAt       DateTime @updatedAt
+  userId          Int?
+  apiKeyId        Int?
+  ipAddress       String?
+  userAgent       String?
+  city            String?
+  region          String?
+  timezone        String?
+  countryCode     String?
+  browser         String?
+  operatingSystem String?
+  group           Group?   @relation("groupAuditLog", fields: [groupId], references: [id])
+  user            User?    @relation("userAuditLog", fields: [userId], references: [id])
+  apiKey          ApiKey?  @relation("apiKeyAuditLog", fields: [apiKeyId], references: [id])
+
+  @@index([apiKeyId], name: "index_auditLog_apiKeyId")
+  @@index([groupId], name: "index_auditLog_groupId")
+  @@index([userId], name: "index_auditLog_userId")
+}

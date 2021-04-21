@@ -1,0 +1,14 @@
+model ApprovedSubnet {
+  createdAt   DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  subnet      String
+  city        String?
+  region      String?
+  timezone    String?
+  countryCode String?
+  updatedAt   DateTime @updatedAt
+  userId      Int
+  user        User     @relation("userApprovedSubnet", fields: [userId], references: [id])
+  
+  @@index([userId], name: "index_approvedSubnet_userId")
+}
