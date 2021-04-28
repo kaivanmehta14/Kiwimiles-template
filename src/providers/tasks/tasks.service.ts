@@ -8,6 +8,8 @@ import { UsersService } from '../../modules/users/users.service';
 import { ElasticSearchService } from '../elasticsearch/elasticsearch.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+/* stand-alone service: which is obsolete and replaced by dynamic-task service:: use it in case
+dynamic service malfunctions */
 @Injectable()
 export class TasksService {
   constructor(

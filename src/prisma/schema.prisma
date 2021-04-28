@@ -276,6 +276,12 @@ model Session {
   @@index([userId], name: "index_session_userId")
 }
 
+model TaskSchedules {
+  id       Int    @id @default(autoincrement())
+  taskName String
+  taskTime String
+}
+
 model User {
   checkLocationOnLogin Boolean              @default(true)
   countryCode          String               @default("nz")
