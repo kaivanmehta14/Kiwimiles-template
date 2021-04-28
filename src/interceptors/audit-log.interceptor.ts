@@ -71,7 +71,6 @@ export class AuditLogger implements NestInterceptor {
                 data.user = { connect: { id: request.user.id } };
               if (request.user.id && request.user.type === 'api-key')
                 data.apiKey = { connect: { id: request.user.id } };
-              if (groupId) data.group = { connect: { id: groupId } };
               await this.prisma.auditLog.create({ data });
               if (groupId) this.webhooksService.triggerWebhook(groupId, event);
             }

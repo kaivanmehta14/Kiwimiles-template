@@ -90,7 +90,7 @@ export class GroupController {
 
   /** Delete a group */
   @Delete(':groupId')
-  @AuditLog('delete')
+  @AuditLog('delete-group-{groupId}')
   @Scopes('group-{groupId}:delete')
   async remove(
     @Param('groupId', ParseIntPipe) id: number,
