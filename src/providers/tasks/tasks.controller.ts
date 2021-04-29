@@ -4,7 +4,8 @@ import {
     Post, 
     Get
 } from '@nestjs/common';
-import { DynamicTasksService, UpdateTimingDto } from './dynamic-tasks.service';
+import { DynamicTasksService} from './dynamic-tasks.service';
+import { UpdateTimingDto } from './tasks.dto';
   
   @Controller('tasks')
   export class TasksController {

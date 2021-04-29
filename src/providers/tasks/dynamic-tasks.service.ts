@@ -9,6 +9,7 @@ import { ElasticSearchService } from '../elasticsearch/elasticsearch.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CronJob } from 'cron';
 import { TaskSchedules } from '@prisma/client';
+import { UpdateTimingDto } from './tasks.dto';
 
 @Injectable()
 export class DynamicTasksService {
@@ -211,9 +212,4 @@ export class DynamicTasksService {
       job.start();
     })
   }
-}
-
-export class UpdateTimingDto {
-  taskName: string;
-  timing: string;
 }
