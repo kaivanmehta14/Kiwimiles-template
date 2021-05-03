@@ -68,6 +68,12 @@ APP_NAME = "Staart"
 DATABASE_URL = "mysql://root:password@example.com:3306/database-name"
 ```
 
+### To create/ update in prisma
+
+```
+npm run generate:prisma (it will merge all the files, format it and generate prisma)
+```
+
 ### Run locally
 
 To run the project, use the following npm script:

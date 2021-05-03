@@ -33,6 +33,12 @@ npx prisma db push --preview-feature
 
 When you make changes to your database schema, you should use the `prisma migrate` command:
 
+If You change/add any prisma file run this command(New! timestamp:: 3rd May 2021 (creator: Kaivan Mehta))
+```
+npm run generate:prisma (it will merge all the files, format it and generate prisma)
+```
+
+For migration
 ```
 npx prisma migrate save --experimental
 npx prisma migrate up --experimental
